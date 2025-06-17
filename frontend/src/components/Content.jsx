@@ -1,0 +1,220 @@
+// src/components/InitialContent.jsx
+/** @jsx jsx */
+/** @jsxFrag Fragment */
+import { jsx, Fragment } from "hono/jsx";
+
+export const Content = () => (
+    <>
+        <main>
+            <div id="restart-overlay" class="hidden">
+                <div class="restart-message">
+                    <h2>Restarting Service...</h2>
+                    <p>Please wait. This page will reload automatically in 5 seconds.</p>
+                </div>
+            </div>
+            <div class="container">
+                <h1>StageBridge</h1>
+
+                <section class="card">
+                    <h2>Settings</h2>
+                    {/* <!-- Settings content remains the same --> */}
+                    <div class="form-grid">
+                        <label for="midi-input">MIDI Input:</label>
+                        <select id="midi-input"></select>
+                        <label for="midi-output">MIDI Output:</label>
+                        <select id="midi-output"></select>
+                    </div>
+                    <button id="save-and-restart-btn">Save & Restart Service</button>
+                    <div class="config-management">
+                        <p class="small-text" style="margin-top: 15px;">
+                            For core network settings (IPs/Ports), use the dedicated admin page.
+                            <br />
+                            <a href="/" target="_blank" id="admin-redirect" style="color: red">Open Network Admin Page</a>
+                        </p>
+                    </div>
+                    <div class="config-management">
+                        <h3>Configuration Management</h3>
+                        <p class="small-text">
+                            Download a backup of your current configuration or upload a saved
+                            file.
+                        </p>
+                        <div class="button-group">
+                            <button id="download-config-btn">Download Config</button>
+                            <label for="upload-config-input" class="button-like-label">
+                                Upload Config
+                            </label>
+                            <input type="file" id="upload-config-input" accept=".json" hidden />
+                            <span id="upload-filename">No file selected.</span>
+                        </div>
+                        <p class="warning-text">
+                            Warning: Uploading will overwrite all current mappings and settings.
+                            A script restart may be required.
+                        </p>
+                    </div>
+                </section>
+
+                <section class="card">
+                    <h2>Mappings</h2>
+                    <table id="mappings-table">
+                        <thead>
+                            <tr>
+                                <th>OSC Address</th>
+                                <th>Description</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                    <button id="show-add-mapping-form-btn">Add New Mapping</button>
+                </section>
+
+                {/* <!-- Add this entire <section> to your index.html, e.g., after the Mappings card --> */}
+                <section class="card">
+                    <h2>Song Importer</h2>
+                    <p class="small-text">
+                        Upload a song CSV to automatically generate mappings for patch changes,
+                        scenes, and footswitches.
+                    </p>
+                    <div id="song-importer-form">
+                        <div class="form-grid">
+                            <label for="song-title">Song Title:</label>
+                            <input
+                                type="text"
+                                id="song-title"
+                                placeholder="e.g., Uptown Funk"
+                                required
+                            />
+                            <label for="song-setlist">Setlist Number (1-13):</label>
+                            <input
+                                type="number"
+                                id="song-setlist"
+                                value="1"
+                                min="1"
+                                max="13"
+                                required
+                            />
+                            <label for="song-csv-input">Song CSV File:</label>
+                            <input type="file" id="song-csv-input" accept=".csv" required />
+                        </div>
+                        <button id="process-song-btn">Process & Add Mappings</button>
+                    </div>
+                </section>
+
+                {/* <!-- UPDATED DIALOG --> */}
+                <dialog id="add-mapping-dialog">
+                    <form id="add-mapping-form">
+                        <h3>New OSC Mapping</h3>
+
+                        <div class="form-section">
+                            <label for="osc-address">OSC Address:</label>
+                            <input
+                                type="text"
+                                id="osc-address"
+                                placeholder="/song/my_song/intro"
+                                required
+                            />
+                        </div>
+
+                        <div class="form-section">
+                            <label for="mapping-category">Action Category:</label>
+                            <select id="mapping-category">
+                                <option value="">-- Select a Category --</option>
+                                <option value="patch">Preset/Patch Change</option>
+                                <option value="scene">Scene Select</option>
+                                <option value="footswitch">Footswitch Toggle</option>
+                                <option value="mode_view">Mode & View Control</option>
+                                <option value="looper">Looper Control</option>
+                            </select>
+                        </div>
+
+                        {/* <!-- Dynamic Fields Container --> */}
+                        <div id="dynamic-fields-container">
+                            {/* <!-- Preset/Patch Change Fields --> */}
+                            <div id="category-patch" class="hidden">
+                                <label for="patch-setlist">Setlist (1-13):</label>
+                                <input type="number" id="patch-setlist" value="1" min="1" max="13" />
+                                <label for="patch-number">Patch Number (1-32):</label>
+                                <input type="number" id="patch-number" value="1" min="1" max="32" />
+                                <label for="patch-letter">Patch Letter (A-H):</label>
+                                <select id="patch-letter">
+                                    <option value="0">A</option>
+                                    <option value="1">B</option>
+                                    <option value="2">C</option>
+                                    <option value="3">D</option>
+                                    <option value="4">E</option>
+                                    <option value="5">F</option>
+                                    <option value="6">G</option>
+                                    <option value="7">H</option>
+                                </select>
+                            </div>
+
+                            {/* <!-- Scene Select Fields --> */}
+                            <div id="category-scene" class="hidden">
+                                <label for="scene-select">Select Scene (A-H):</label>
+                                <select id="scene-select">
+                                    <option value="0">A</option>
+                                    <option value="1">B</option>
+                                    <option value="2">C</option>
+                                    <option value="3">D</option>
+                                    <option value="4">E</option>
+                                    <option value="5">F</option>
+                                    <option value="6">G</option>
+                                    <option value="7">H</option>
+                                </select>
+                            </div>
+
+                            {/* <!-- Footswitch Toggle Fields --> */}
+                            <div id="category-footswitch" class="hidden">
+                                <label for="footswitch-select">Select Footswitch (A-H):</label>
+                                <select id="footswitch-select">
+                                    <option value="35">A</option>
+                                    <option value="36">B</option>
+                                    <option value="37">C</option>
+                                    <option value="38">D</option>
+                                    <option value="39">E</option>
+                                    <option value="40">F</option>
+                                    <option value="41">G</option>
+                                    <option value="42">H</option>
+                                </select>
+                            </div>
+
+                            {/* <!-- Mode & View Control Fields --> */}
+                            <div id="category-mode_view" class="hidden">
+                                <label for="mode-view-select">Select Action:</label>
+                                <select id="mode-view-select">
+                                    <option value="mode_preset">Switch to Preset Mode</option>
+                                    <option value="mode_scene">Switch to Scene Mode</option>
+                                    <option value="mode_stomp">Switch to Stomp Mode</option>
+                                    <option value="tuner_on">Turn Tuner On</option>
+                                    <option value="tuner_off">Turn Tuner Off</option>
+                                    <option value="gig_view_on">Turn Gig View On</option>
+                                    <option value="gig_view_off">Turn Gig View Off</option>
+                                </select>
+                            </div>
+
+                            {/* <!-- Looper Control Fields --> */}
+                            <div id="category-looper" class="hidden">
+                                <label for="looper-select">Select Looper Action:</label>
+                                <select id="looper-select">
+                                    <option value="rec_stop">Record / Overdub / Stop</option>
+                                    <option value="play_stop">Play / Stop</option>
+                                    <option value="undo_redo">Undo / Redo</option>
+                                    <option value="half_speed">Toggle Half Speed</option>
+                                    <option value="reverse">Toggle Reverse</option>
+                                    <option value="one_shot">Toggle One Shot</option>
+                                    <option value="looper_menu_open">Open Looper Menu</option>
+                                    <option value="looper_menu_close">Close Looper Menu</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="dialog-actions">
+                            <button type="button" id="cancel-add-mapping-btn">Cancel</button>
+                            <button type="submit">Create Mapping</button>
+                        </div>
+                    </form>
+                </dialog>
+            </div>
+        </main>
+    </>
+);

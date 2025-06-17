@@ -1,0 +1,15 @@
+{
+  "osc_server_ip": "0.0.0.0",
+  "osc_server_port": 9000,
+  "rtp_midi_target_ip": "192.168.1.100",
+  "rtp_midi_target_port": 5004,
+  "midi_input_name": null,
+  "midi_output_name": null,
+  "song_parser_settings": {
+    "column_name": "QUAD PATCH",
+    "scene_prefix": "SC ",
+    "footswitch_prefix": "FS ",
+    "osc_prefix": "/patch"
+  },
+  "osc_mappings": []
+}
