@@ -195,3 +195,29 @@ dialog::backdrop {
   background-color: var(--card-color);
   border-radius: 8px;
 }
+
+/* Recommended CSS for new elements */
+.table-actions {
+  margin-top: 15px;
+  display: flex;
+  gap: 10px;
+}
+
+.hidden {
+  display: none;
+}
+
+button.danger {
+  background-color: #dc3545;
+  /* A red color for destructive actions */
+  color: white;
+}
+
+button.danger:hover {
+  background-color: #c82333;
+}
+
+#mappings-table .checkbox-cell {
+  width: 20px;
+  text-align: center;
+}

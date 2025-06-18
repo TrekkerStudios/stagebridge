@@ -54,22 +54,6 @@ export const Content = () => (
                 </section>
 
                 <section class="card">
-                    <h2>Mappings</h2>
-                    <table id="mappings-table">
-                        <thead>
-                            <tr>
-                                <th>OSC Address</th>
-                                <th>Description</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                    <button id="show-add-mapping-form-btn">Add New Mapping</button>
-                </section>
-
-                {/* <!-- Add this entire <section> to your index.html, e.g., after the Mappings card --> */}
-                <section class="card">
                     <h2>Song Importer</h2>
                     <p class="small-text">
                         Upload a song CSV to automatically generate mappings for patch changes,
@@ -100,10 +84,44 @@ export const Content = () => (
                     </div>
                 </section>
 
-                {/* <!-- UPDATED DIALOG --> */}
+                <section class="card">
+                    <h2>Mappings</h2>
+                    <div class="search-container" style="margin-bottom: 15px;">
+                        <label for="mapping-search-input">Search Mappings:</label>
+                        <input
+                            type="text"
+                            id="mapping-search-input"
+                            placeholder="Filter by OSC address or description..."
+                            style="width: 100%; padding: 8px; box-sizing: border-box; margin-top: 5px;"
+                        />
+                    </div>
+                    <table id="mappings-table">
+                        <thead>
+                            <tr>
+                                {/* NEW: Select All Checkbox */}
+                                <th class="checkbox-cell">
+                                    <input type="checkbox" id="select-all-checkbox" />
+                                </th>
+                                <th>OSC Address</th>
+                                <th>Description</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                    {/* UPDATED: Grouped action buttons */}
+                    <div class="table-actions">
+                        <button id="show-add-mapping-form-btn">Add New Mapping</button>
+                        {/* NEW: Delete Selected Button */}
+                        <button id="delete-selected-btn" class="hidden danger">
+                            Delete Selected
+                        </button>
+                    </div>
+                </section>
+
                 <dialog id="add-mapping-dialog">
                     <form id="add-mapping-form">
-                        <h3>New OSC Mapping</h3>
+                        <h3 id="dialog-title">New OSC Mapping</h3>
 
                         <div class="form-section">
                             <label for="osc-address">OSC Address:</label>
@@ -210,7 +228,7 @@ export const Content = () => (
 
                         <div class="dialog-actions">
                             <button type="button" id="cancel-add-mapping-btn">Cancel</button>
-                            <button type="submit">Create Mapping</button>
+                            <button type="submit" id="dialog-submit-btn">Create Mapping</button>
                         </div>
                     </form>
                 </dialog>

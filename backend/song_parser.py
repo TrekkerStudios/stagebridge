@@ -53,7 +53,8 @@ def parse_song_csv(file_stream, song_title, setlist_number, settings):
         
         sanitized_title = song_title.lower().replace(' ', '_').replace('/', '_')
         for i, temp_map in enumerate(temp_mappings):
-            osc_address = f"{settings['osc_prefix']}/{sanitized_title}/{i+1}_of_{len(temp_mappings)}"
+            # osc_address = f"{settings['osc_prefix']}/{sanitized_title}/{i+1}_of_{len(temp_mappings)}"
+            osc_address = f"{settings['osc_prefix']}/{sanitized_title}/{i+1}"
             generated_mappings.append({"id": uuid.uuid4().hex, "osc_address": osc_address, **temp_map})
     except Exception as e:
         raise e

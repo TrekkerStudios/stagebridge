@@ -95,13 +95,32 @@ def create_app(restart_callback):
             return jsonify({"message": f"Successfully added {len(new_mappings)} mappings for '{song_title}'."})
         except Exception as e: return jsonify({"error": f"An error occurred during parsing: {e}"}), 500
 
-    @app.route("/api/mappings", methods=["POST"])
-    def add_mapping():
-        mapping = request.json
-        mapping["id"] = uuid.uuid4().hex
-        shared_state.config["osc_mappings"].append(mapping)
-        config_manager.save_config()
-        return jsonify(mapping), 201
+    @app.route("/api/mappings", methods=["POST", "DELETE"])
+    def manage_mappings_plural():
+        # Handle creating a single new mapping
+        if request.method == "POST":
+            mapping = request.json
+            mapping["id"] = uuid.uuid4().hex
+            shared_state.config["osc_mappings"].append(mapping)
+            config_manager.save_config()
+            return jsonify(mapping), 201
+        
+        # NEW: Handle deleting multiple mappings
+        elif request.method == "DELETE":
+            data = request.get_json()
+            if not data or "ids" not in data or not isinstance(data["ids"], list):
+                return jsonify({"error": "Invalid request body. 'ids' array is required."}), 400
+            
+            ids_to_delete = set(data["ids"])
+            current_mappings = shared_state.config["osc_mappings"]
+            
+            # Filter the list, keeping only mappings whose IDs are NOT in the set to be deleted
+            updated_mappings = [m for m in current_mappings if m.get("id") not in ids_to_delete]
+            
+            shared_state.config["osc_mappings"] = updated_mappings
+            config_manager.save_config()
+            
+            return jsonify({"message": f"{len(ids_to_delete)} mappings deleted successfully."})
 
     @app.route("/api/mappings/<mapping_id>", methods=["PUT", "DELETE"])
     def manage_mapping(mapping_id):

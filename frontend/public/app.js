@@ -1,10 +1,11 @@
 document.addEventListener("DOMContentLoaded", () => {
   // --- CONFIGURATION ---
-  const CURRENT_ADDR = window.location.origin
-  const API_PORT = "3001"; // IMPORTANT: Set your Pi's IP
-  const BASE_ADDR = CURRENT_ADDR.lastIndexOf(':') !== -1 ?
-    CURRENT_ADDR.slice(0, CURRENT_ADDR.lastIndexOf(':')) :
-    CURRENT_ADDR;
+  const CURRENT_ADDR = window.location.origin;
+  const API_PORT = "3001";
+  const BASE_ADDR =
+    CURRENT_ADDR.lastIndexOf(":") !== -1
+      ? CURRENT_ADDR.slice(0, CURRENT_ADDR.lastIndexOf(":"))
+      : CURRENT_ADDR;
   const API_BASE_URL = BASE_ADDR + ":" + API_PORT;
   console.log(`Current URL: ${CURRENT_ADDR} | API URL (derived): ${API_BASE_URL}`);
 
@@ -13,28 +14,35 @@ document.addEventListener("DOMContentLoaded", () => {
   const midiOutputSelect = document.getElementById("midi-output");
   const saveAndRestartBtn = document.getElementById("save-and-restart-btn");
   const mappingsTableBody = document.querySelector("#mappings-table tbody");
+  const selectAllCheckbox = document.getElementById("select-all-checkbox");
+  const deleteSelectedBtn = document.getElementById("delete-selected-btn");
   const showFormBtn = document.getElementById("show-add-mapping-form-btn");
   const addMappingDialog = document.getElementById("add-mapping-dialog");
   const addMappingForm = document.getElementById("add-mapping-form");
   const cancelFormBtn = document.getElementById("cancel-add-mapping-btn");
   const mappingCategorySelect = document.getElementById("mapping-category");
+  const dialogTitle = document.getElementById("dialog-title");
+  const dialogSubmitBtn = document.getElementById("dialog-submit-btn");
+  const mappingSearchInput = document.getElementById("mapping-search-input");
   const dynamicFieldsContainer = document.getElementById(
-    "dynamic-fields-container"
+    "dynamic-fields-container",
   );
   const downloadConfigBtn = document.getElementById("download-config-btn");
   const uploadConfigInput = document.getElementById("upload-config-input");
   const uploadFilenameSpan = document.getElementById("upload-filename");
   const restartOverlay = document.getElementById("restart-overlay");
-  // New Song Importer Elements
+
   const songTitleInput = document.getElementById("song-title");
   const songSetlistInput = document.getElementById("song-setlist");
   const songCsvInput = document.getElementById("song-csv-input");
   const processSongBtn = document.getElementById("process-song-btn");
-  const adminRedirect = document.getElementById("admin-redirect")
+  const adminRedirect = document.getElementById("admin-redirect");
 
   let currentConfig = {};
+  let editingMappingId = null;
+  const selectedMappingIds = new Set();
 
-  // --- API FUNCTIONS (Unchanged) ---
+  // --- API FUNCTIONS ---
   const fetchAPI = async (endpoint, options = {}) => {
     let url = `${API_BASE_URL}${endpoint}`;
     if (!options.method || options.method.toUpperCase() === "GET") {
@@ -45,7 +53,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(
-          errorData.error || `HTTP error! status: ${response.status}`
+          errorData.error || `HTTP error! status: ${response.status}`,
         );
       }
       const contentType = response.headers.get("content-type");
@@ -60,7 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // --- INITIALIZATION & UI RENDERING (Unchanged) ---
+  // --- INITIALIZATION & UI RENDERING ---
   const loadInitialData = async () => {
     const ports = await fetchAPI("/api/midi-ports");
     if (ports) {
@@ -95,23 +103,96 @@ document.addEventListener("DOMContentLoaded", () => {
     mappingsTableBody.innerHTML = "";
     if (!currentConfig.osc_mappings || !currentConfig.osc_mappings.length) {
       mappingsTableBody.innerHTML =
-        '<tr><td colspan="3">No mappings configured.</td></tr>';
+        '<tr><td colspan="4">No mappings configured.</td></tr>';
+      filterMappings();
       return;
     }
     currentConfig.osc_mappings.forEach((m) => {
       const row = document.createElement("tr");
       row.innerHTML = `
+        <td class="checkbox-cell">
+            <input type="checkbox" class="row-checkbox" data-id="${m.id}" />
+        </td>
         <td>${m.osc_address}</td>
         <td>${m.description || "N/A"}</td>
-        <td><button class="delete-btn" data-id="${m.id}">Delete</button></td>`;
+        <td class="actions-cell">
+            <button class="edit-btn" data-id="${m.id}">Edit</button>
+            <button class="delete-btn" data-id="${m.id}">Delete</button>
+        </td>`;
       mappingsTableBody.appendChild(row);
     });
+    filterMappings();
+  };
+
+  const filterMappings = () => {
+    const searchTerm = mappingSearchInput.value.toLowerCase();
+    const rows = mappingsTableBody.querySelectorAll("tr");
+
+    rows.forEach((row) => {
+      const noMappingsCell = row.querySelector("td[colspan='4']");
+      if (noMappingsCell) {
+        row.style.display = searchTerm === "" ? "" : "none";
+        return;
+      }
+
+      const oscAddressCell = row.children[1];
+      const descriptionCell = row.children[2];
+
+      const oscAddressText = oscAddressCell
+        ? oscAddressCell.textContent.toLowerCase()
+        : "";
+      const descriptionText = descriptionCell
+        ? descriptionCell.textContent.toLowerCase()
+        : "";
+
+      if (
+        oscAddressText.includes(searchTerm) ||
+        descriptionText.includes(searchTerm)
+      ) {
+        row.style.display = "";
+      } else {
+        row.style.display = "none";
+      }
+    });
+
+    updateSelectAllCheckboxState(); // Update master checkbox state after filtering
+  };
+
+  const updateBulkDeleteButtonState = () => {
+    if (selectedMappingIds.size > 0) {
+      deleteSelectedBtn.classList.remove("hidden");
+      deleteSelectedBtn.textContent = `Delete Selected (${selectedMappingIds.size})`;
+    } else {
+      deleteSelectedBtn.classList.add("hidden");
+    }
+  };
+
+  const updateSelectAllCheckboxState = () => {
+    const visibleCheckboxes = Array.from(
+      mappingsTableBody.querySelectorAll(".row-checkbox"),
+    ).filter((cb) => cb.closest("tr").style.display !== "none");
+
+    if (visibleCheckboxes.length === 0) {
+      selectAllCheckbox.checked = false;
+      selectAllCheckbox.indeterminate = false;
+      return;
+    }
+
+    const allVisibleChecked = visibleCheckboxes.every((cb) => cb.checked);
+
+    if (allVisibleChecked) {
+      selectAllCheckbox.checked = true;
+      selectAllCheckbox.indeterminate = false;
+    } else {
+      selectAllCheckbox.checked = false;
+      const someVisibleChecked = visibleCheckboxes.some((cb) => cb.checked);
+      selectAllCheckbox.indeterminate = someVisibleChecked;
+    }
   };
 
   // --- EVENT HANDLERS ---
-  // All previous event handlers (saveAndRestartBtn, mappingsTableBody, etc.) remain the same...
+  mappingSearchInput.addEventListener("input", filterMappings);
 
-  // --- NEW: Song Importer Event Handler ---
   processSongBtn.addEventListener("click", async () => {
     const songTitle = songTitleInput.value;
     const setlistNumber = songSetlistInput.value;
@@ -124,7 +205,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (
       !confirm(
-        `This will add new mappings for the song "${songTitle}". Are you sure?`
+        `This will add new mappings for the song "${songTitle}". Are you sure?`,
       )
     ) {
       return;
@@ -136,7 +217,6 @@ document.addEventListener("DOMContentLoaded", () => {
     formData.append("file", file);
 
     try {
-      // Note: When using FormData, the browser sets the Content-Type header automatically.
       const response = await fetch(`${API_BASE_URL}/api/songs/upload`, {
         method: "POST",
         body: formData,
@@ -148,7 +228,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       alert(result.message);
-      // Clear the form and reload the data
       songTitleInput.value = "";
       songCsvInput.value = "";
       loadInitialData();
@@ -157,11 +236,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // ... other event handlers ...
   saveAndRestartBtn.addEventListener("click", async () => {
     if (
       !confirm(
-        "This will save the current MIDI port selection and restart the service. Are you sure?"
+        "This will save the current MIDI port selection and restart the service. Are you sure?",
       )
     ) {
       return;
@@ -190,22 +268,108 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   mappingsTableBody.addEventListener("click", async (e) => {
-    if (e.target.classList.contains("delete-btn")) {
-      const mappingId = e.target.dataset.id;
+    const target = e.target;
+
+    if (target.classList.contains("row-checkbox")) {
+      const mappingId = target.dataset.id;
+      if (target.checked) {
+        selectedMappingIds.add(mappingId);
+      } else {
+        selectedMappingIds.delete(mappingId);
+      }
+      updateBulkDeleteButtonState();
+      updateSelectAllCheckboxState(); // Update master checkbox state after individual click
+    }
+
+    // Handle Delete
+    if (target.classList.contains("delete-btn")) {
+      const mappingId = target.dataset.id;
       if (confirm("Are you sure you want to delete this mapping?")) {
         await fetchAPI(`/api/mappings/${mappingId}`, { method: "DELETE" });
         loadInitialData();
       }
     }
+
+    // Handle Edit
+    if (target.classList.contains("edit-btn")) {
+      const mappingId = target.dataset.id;
+      const mappingToEdit = currentConfig.osc_mappings.find(
+        (m) => m.id === mappingId,
+      );
+      if (mappingToEdit) {
+        editingMappingId = mappingId;
+        dialogTitle.textContent = "Edit OSC Mapping";
+        dialogSubmitBtn.textContent = "Update Mapping";
+        populateFormForEdit(mappingToEdit);
+        addMappingDialog.showModal();
+      }
+    }
+  });
+
+  selectAllCheckbox.addEventListener("change", (e) => {
+    const isChecked = e.target.checked;
+    const allRows = mappingsTableBody.querySelectorAll("tr");
+
+    allRows.forEach((row) => {
+      const noMappingsCell = row.querySelector("td[colspan='4']");
+      if (noMappingsCell) {
+        return; // Skip "No mappings" row
+      }
+
+      // Only operate on rows that are not hidden by the filter
+      if (row.style.display !== "none") {
+        const checkbox = row.querySelector(".row-checkbox");
+        if (checkbox) {
+          checkbox.checked = isChecked;
+          const mappingId = checkbox.dataset.id;
+          if (isChecked) {
+            selectedMappingIds.add(mappingId);
+          } else {
+            selectedMappingIds.delete(mappingId);
+          }
+        }
+      }
+    });
+    updateBulkDeleteButtonState();
+    // No need to call updateSelectAllCheckboxState here, as its state is already set by the event.
+  });
+
+  deleteSelectedBtn.addEventListener("click", async () => {
+    if (selectedMappingIds.size === 0) return;
+
+    if (
+      !confirm(
+        `Are you sure you want to delete ${selectedMappingIds.size} selected mappings?`,
+      )
+    ) {
+      return;
+    }
+
+    const idsToDelete = Array.from(selectedMappingIds);
+    await fetchAPI("/api/mappings", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: idsToDelete }),
+    });
+
+    selectedMappingIds.clear();
+    updateBulkDeleteButtonState();
+    loadInitialData();
   });
 
   showFormBtn.addEventListener("click", () => {
+    editingMappingId = null;
     addMappingForm.reset();
     updateDynamicFields();
+    dialogTitle.textContent = "New OSC Mapping";
+    dialogSubmitBtn.textContent = "Create Mapping";
     addMappingDialog.showModal();
   });
 
-  cancelFormBtn.addEventListener("click", () => addMappingDialog.close());
+  cancelFormBtn.addEventListener("click", () => {
+    addMappingDialog.close();
+    editingMappingId = null;
+  });
 
   mappingCategorySelect.addEventListener("change", updateDynamicFields);
 
@@ -216,7 +380,7 @@ document.addEventListener("DOMContentLoaded", () => {
       .forEach((div) => div.classList.add("hidden"));
     if (selectedCategory) {
       const sectionToShow = document.getElementById(
-        `category-${selectedCategory}`
+        `category-${selectedCategory}`,
       );
       if (sectionToShow) sectionToShow.classList.remove("hidden");
     }
@@ -224,17 +388,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
   addMappingForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const newMapping = generateMappingFromForm();
-    if (!newMapping) {
+    const mappingData = generateMappingFromForm();
+    if (!mappingData) {
       alert("Please select a category and fill out the required fields.");
       return;
     }
-    await fetchAPI("/api/mappings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newMapping),
-    });
+
+    if (editingMappingId) {
+      await fetchAPI(`/api/mappings/${editingMappingId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(mappingData),
+      });
+    } else {
+      await fetchAPI("/api/mappings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(mappingData),
+      });
+    }
+
     addMappingDialog.close();
+    editingMappingId = null;
     loadInitialData();
   });
 
@@ -256,7 +431,7 @@ document.addEventListener("DOMContentLoaded", () => {
     uploadFilenameSpan.textContent = `Selected: ${file.name}`;
     if (
       !confirm(
-        `Are you sure you want to upload ${file.name}? This will overwrite the current configuration.`
+        `Are you sure you want to upload ${file.name}? This will overwrite the current configuration.`,
       )
     ) {
       uploadConfigInput.value = "";
@@ -282,6 +457,83 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  function populateFormForEdit(mapping) {
+    addMappingForm.reset();
+    document.getElementById("osc-address").value = mapping.osc_address;
+
+    const msg = mapping.midi_sequence[0];
+    let category = "";
+
+    // Determine category from MIDI message
+    if (mapping.description.includes("Setlist")) {
+      category = "patch";
+    } else if (msg.control === 43) {
+      category = "scene";
+    } else if (msg.control >= 35 && msg.control <= 42) {
+      category = "footswitch";
+    } else if ([45, 46, 47].includes(msg.control)) {
+      category = "mode_view";
+    } else if ([48, 50, 51, 53, 54, 55, 56].includes(msg.control)) {
+      category = "looper";
+    }
+
+    mappingCategorySelect.value = category;
+    updateDynamicFields();
+
+    // Populate the specific fields for the category
+    switch (category) {
+      case "patch": {
+        const setlistMsg = mapping.midi_sequence.find((m) => m.control === 32);
+        const bankMsg = mapping.midi_sequence.find((m) => m.control === 0);
+        const pcMsg = mapping.midi_sequence.find(
+          (m) => m.type === "program_change",
+        );
+        const setlist = setlistMsg.value;
+        const presetIndex = bankMsg.value * 128 + pcMsg.program;
+        const patchNum = Math.floor(presetIndex / 8) + 1;
+        const patchLetterVal = presetIndex % 8;
+        document.getElementById("patch-setlist").value = setlist + 1;
+        document.getElementById("patch-number").value = patchNum;
+        document.getElementById("patch-letter").value = patchLetterVal;
+        break;
+      }
+      case "scene":
+        document.getElementById("scene-select").value = msg.value;
+        break;
+      case "footswitch":
+        document.getElementById("footswitch-select").value = msg.control;
+        break;
+      case "mode_view": {
+        let action = "";
+        if (msg.control === 47) {
+          if (msg.value === 0) action = "mode_preset";
+          else if (msg.value === 1) action = "mode_scene";
+          else if (msg.value === 2) action = "mode_stomp";
+        } else if (msg.control === 45) {
+          action = msg.value === 0 ? "tuner_off" : "tuner_on";
+        } else if (msg.control === 46) {
+          action = msg.value === 0 ? "gig_view_off" : "gig_view_on";
+        }
+        document.getElementById("mode-view-select").value = action;
+        break;
+      }
+      case "looper": {
+        let action = "";
+        if (msg.control === 53) action = "rec_stop";
+        else if (msg.control === 54) action = "play_stop";
+        else if (msg.control === 56) action = "undo_redo";
+        else if (msg.control === 51) action = "half_speed";
+        else if (msg.control === 55) action = "reverse";
+        else if (msg.control === 50) action = "one_shot";
+        else if (msg.control === 48) {
+          action = msg.value === 0 ? "looper_menu_open" : "looper_menu_close";
+        }
+        document.getElementById("looper-select").value = action;
+        break;
+      }
+    }
+  }
+
   function generateMappingFromForm() {
     const osc_address = document.getElementById("osc-address").value;
     const category = mappingCategorySelect.value;
@@ -293,18 +545,15 @@ document.addEventListener("DOMContentLoaded", () => {
       case "patch": {
         const setlist =
           parseInt(document.getElementById("patch-setlist").value) - 1;
-        const patchNum = parseInt(
-          document.getElementById("patch-number").value
-        );
+        const patchNum = parseInt(document.getElementById("patch-number").value);
         const patchLetterVal = parseInt(
-          document.getElementById("patch-letter").value
+          document.getElementById("patch-letter").value,
         );
         const patchLetterChar = String.fromCharCode(65 + patchLetterVal);
         const presetIndex = (patchNum - 1) * 8 + patchLetterVal;
         const bank = presetIndex > 127 ? 1 : 0;
         const program = presetIndex % 128;
-        description = `QC: Setlist ${setlist + 1
-          }, Patch ${patchNum}${patchLetterChar}`;
+        description = `QC: Setlist ${setlist + 1}, Patch ${patchNum}${patchLetterChar}`;
         midi_sequence = [
           { type: "control_change", channel, control: 0, value: bank },
           { type: "control_change", channel, control: 32, value: setlist },
@@ -338,13 +587,27 @@ document.addEventListener("DOMContentLoaded", () => {
         description = `QC: ${text}`;
         let control, value;
         switch (action) {
-          case "mode_preset": (control = 47), (value = 0); break;
-          case "mode_scene": (control = 47), (value = 1); break;
-          case "mode_stomp": (control = 47), (value = 2); break;
-          case "tuner_on": (control = 45), (value = 127); break;
-          case "tuner_off": (control = 45), (value = 0); break;
-          case "gig_view_on": (control = 46), (value = 127); break;
-          case "gig_view_off": (control = 46), (value = 0); break;
+          case "mode_preset":
+            (control = 47), (value = 0);
+            break;
+          case "mode_scene":
+            (control = 47), (value = 1);
+            break;
+          case "mode_stomp":
+            (control = 47), (value = 2);
+            break;
+          case "tuner_on":
+            (control = 45), (value = 127);
+            break;
+          case "tuner_off":
+            (control = 45), (value = 0);
+            break;
+          case "gig_view_on":
+            (control = 46), (value = 127);
+            break;
+          case "gig_view_off":
+            (control = 46), (value = 0);
+            break;
         }
         midi_sequence = [{ type: "control_change", channel, control, value }];
         break;
@@ -354,16 +617,33 @@ document.addEventListener("DOMContentLoaded", () => {
         const action = select.value;
         const text = select.options[select.selectedIndex].text;
         description = `QC Looper: ${text}`;
-        let control, value = 127;
+        let control,
+          value = 127;
         switch (action) {
-          case "rec_stop": control = 53; break;
-          case "play_stop": control = 54; break;
-          case "undo_redo": control = 56; break;
-          case "half_speed": control = 51; break;
-          case "reverse": control = 55; break;
-          case "one_shot": control = 50; break;
-          case "looper_menu_open": (control = 48), (value = 0); break;
-          case "looper_menu_close": (control = 48), (value = 127); break;
+          case "rec_stop":
+            control = 53;
+            break;
+          case "play_stop":
+            control = 54;
+            break;
+          case "undo_redo":
+            control = 56;
+            break;
+          case "half_speed":
+            control = 51;
+            break;
+          case "reverse":
+            control = 55;
+            break;
+          case "one_shot":
+            control = 50;
+            break;
+          case "looper_menu_open":
+            (control = 48), (value = 0);
+            break;
+          case "looper_menu_close":
+            (control = 48), (value = 127);
+            break;
         }
         midi_sequence = [{ type: "control_change", channel, control, value }];
         break;
