@@ -1,21 +1,16 @@
-// index.js
+// src/index.js
 import { Hono } from "hono";
-import { serve } from "@hono/node-server";
-import { serveStatic } from "@hono/node-server/serve-static";
+import bonjour from "bonjour";
 import { cors } from "hono/cors";
-import bonjour from "bonjour"; // UPDATED: Import the new library
+import { assets } from './embedded_assets.js'; // Import the embedded assets
 
-// --- Bonjour Discovery Setup ---
-// UPDATED: Instantiate bonjour
+// --- Zeroconf Discovery Setup (Unchanged) ---
 const bj = bonjour();
 const discoveredDevices = new Map();
-
-// UPDATED: Use the .find() method to browse for services
 const browser = bj.find({ type: "stagebridge-api", protocol: "tcp" });
 
 browser.on("up", (service) => {
   console.log("Device discovered:", service.name);
-  // The service object structure is very similar, so this logic remains the same
   discoveredDevices.set(service.fqdn, {
     name: service.name,
     host: service.host,
@@ -32,26 +27,23 @@ browser.on("down", (service) => {
 
 console.log("Starting network discovery for StageBridge devices...");
 
-// --- Hono Web Server Setup (No changes needed below this line) ---
+// --- Hono Web Server Setup ---
 const app = new Hono();
 
 // Middleware
 app.use("*", cors());
 
-// API Endpoint to get the list of discovered devices
+// --- API Routes (Unchanged) ---
 app.get("/api/devices", (c) => {
   const devices = Array.from(discoveredDevices.values());
   return c.json(devices);
 });
 
-// API Endpoint to sync settings to all devices
 app.post("/api/sync", async (c) => {
   const { rtp_ip, rtp_port } = await c.req.json();
-
   if (!rtp_ip || !rtp_port) {
     return c.json({ error: "Missing rtp_ip or rtp_port" }, 400);
   }
-
   const devices = Array.from(discoveredDevices.values());
   const updatePromises = devices.map(async (device) => {
     const deviceUrl = `http://${device.ip}:${device.port}`;
@@ -59,44 +51,55 @@ app.post("/api/sync", async (c) => {
       const configRes = await fetch(`${deviceUrl}/api/config`);
       if (!configRes.ok) throw new Error("Failed to fetch config");
       const currentConfig = await configRes.json();
-
       currentConfig.rtp_midi_target_ip = rtp_ip;
       currentConfig.rtp_midi_target_port = rtp_port;
-
       const putRes = await fetch(`${deviceUrl}/api/config`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(currentConfig),
       });
       if (!putRes.ok) throw new Error("Failed to save config");
-
       await fetch(`${deviceUrl}/api/system/restart`, { method: "POST" });
-
       return { name: device.name, status: "success" };
     } catch (error) {
       console.error(`Failed to sync ${device.name}:`, error.message);
       return { name: device.name, status: "failure", reason: error.message };
     }
   });
-
   const results = await Promise.allSettled(updatePromises);
   return c.json(results);
 });
 
-// Static File Serving
-app.use("/*", serveStatic({ root: "./public" }));
-app.get("/", serveStatic({ path: "./public/index.html" }));
+// --- Static File Serving from Embedded Assets ---
+app.get("/", (c) => {
+  const htmlContent = Buffer.from(assets['index.html'], 'base64').toString('utf8');
+  return c.html(htmlContent);
+});
 
-// Start the Server
+app.get("/style.css", (c) => {
+  const cssContent = Buffer.from(assets['style.css'], 'base64').toString('utf8');
+  return new Response(cssContent, {
+    headers: { "Content-Type": "text/css" },
+  });
+});
+
+app.get("/client.js", (c) => {
+  const jsContent = Buffer.from(assets['client.js'], 'base64').toString('utf8');
+  return new Response(jsContent, {
+    headers: { "Content-Type": "application/javascript" },
+  });
+});
+
+// --- Start the Server ---
 const PORT = 8000;
 console.log(`Fleet Manager server running at http://localhost:${PORT}`);
 
-serve({
-  fetch: app.fetch,
+export default {
   port: PORT,
-});
+  fetch: app.fetch,
+};
 
-// Graceful shutdown
+// Graceful shutdown for Bonjour
 process.on("SIGINT", () => {
   console.log("Shutting down discovery...");
   browser.stop(() => {
