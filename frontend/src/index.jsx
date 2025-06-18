@@ -1,5 +1,6 @@
 /** @jsx jsx */
 /** @jsxFrag Fragment */
+/** @jsxImportSource hono/jsx */
 import { jsx } from "hono/jsx"; // Import Hono's JSX runtime
 import { Hono } from "hono";
 import { serveStatic } from 'hono/bun'

@@ -1,6 +1,6 @@
-// src/components/InitialContent.jsx
 /** @jsx jsx */
 /** @jsxFrag Fragment */
+/** @jsxImportSource hono/jsx */
 import { jsx, Fragment } from "hono/jsx";
 
 export const Content = () => (

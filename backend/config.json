@@ -1,15 +1,40 @@
 {
+  "midi_input_name": "",
+  "midi_output_name": "",
+  "osc_mappings": [
+    {
+      "description": "QC: Setlist 1, Patch 1A",
+      "id": "63a74df835f14a55b29f651e11072473",
+      "midi_sequence": [
+        {
+          "channel": 1,
+          "control": 0,
+          "type": "control_change",
+          "value": 0
+        },
+        {
+          "channel": 1,
+          "control": 32,
+          "type": "control_change",
+          "value": 0
+        },
+        {
+          "channel": 1,
+          "program": 0,
+          "type": "program_change"
+        }
+      ],
+      "osc_address": "/test1"
+    }
+  ],
   "osc_server_ip": "0.0.0.0",
   "osc_server_port": 9000,
-  "rtp_midi_target_ip": "192.168.1.100",
-  "rtp_midi_target_port": 5004,
-  "midi_input_name": null,
-  "midi_output_name": null,
+  "rtp_midi_target_ip": "1.1.1.1",
+  "rtp_midi_target_port": 4999,
   "song_parser_settings": {
     "column_name": "QUAD PATCH",
-    "scene_prefix": "SC ",
     "footswitch_prefix": "FS ",
-    "osc_prefix": "/patch"
-  },
-  "osc_mappings": []
+    "osc_prefix": "/patch",
+    "scene_prefix": "SC "
+  }
 }

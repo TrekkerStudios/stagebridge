@@ -1,5 +1,6 @@
 /** @jsx jsx */
 /** @jsxFrag Fragment */
+/** @jsxImportSource hono/jsx */
 import { jsx, Fragment } from "hono/jsx"; // Import Hono's JSX runtime
 
 export const Layout = (props) => (
