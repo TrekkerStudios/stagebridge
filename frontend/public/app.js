@@ -38,6 +38,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const processSongBtn = document.getElementById("process-song-btn");
   const adminRedirect = document.getElementById("admin-redirect");
 
+  // New elements for uploading mappings only
+  const uploadMappingsInput = document.getElementById("upload-mappings-input");
+  const uploadMappingsFilenameSpan = document.getElementById("upload-mappings-filename");
+
   let currentConfig = {};
   let editingMappingId = null;
   const selectedMappingIds = new Set();
@@ -83,6 +87,7 @@ document.addEventListener("DOMContentLoaded", () => {
       renderMappingsTable();
     }
     if (adminRedirect) {
+      // Ensure adminRedirect exists before trying to set href
       adminRedirect.href = API_BASE_URL + "/admin" || "/";
     }
   };
@@ -120,8 +125,16 @@ document.addEventListener("DOMContentLoaded", () => {
             <button class="delete-btn" data-id="${m.id}">Delete</button>
         </td>`;
       mappingsTableBody.appendChild(row);
+
+      // Re-check checkboxes for currently selected IDs
+      const checkbox = row.querySelector(".row-checkbox");
+      if (checkbox && selectedMappingIds.has(m.id)) {
+        checkbox.checked = true;
+      }
     });
-    filterMappings();
+    filterMappings(); // Apply filter after rendering
+    updateBulkDeleteButtonState(); // Update button state
+    updateSelectAllCheckboxState(); // Update select all checkbox state
   };
 
   const filterMappings = () => {
@@ -154,8 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
         row.style.display = "none";
       }
     });
-
-    updateSelectAllCheckboxState(); // Update master checkbox state after filtering
+    updateSelectAllCheckboxState();
   };
 
   const updateBulkDeleteButtonState = () => {
@@ -285,7 +297,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (target.classList.contains("delete-btn")) {
       const mappingId = target.dataset.id;
       if (confirm("Are you sure you want to delete this mapping?")) {
+        // Corrected API call for single delete
         await fetchAPI(`/api/mappings/${mappingId}`, { method: "DELETE" });
+        selectedMappingIds.delete(mappingId); // Ensure it's removed from selected
+        updateBulkDeleteButtonState();
         loadInitialData();
       }
     }
@@ -345,9 +360,11 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    // The backend API handles multiple deletes for '/api/mappings', assuming it expects a list of IDs.
+    // If not, a loop and individual delete calls would be needed.
     const idsToDelete = Array.from(selectedMappingIds);
     await fetchAPI("/api/mappings", {
-      method: "DELETE",
+      method: "DELETE", // Assuming the backend supports DELETE with a body for multiple IDs
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ids: idsToDelete }),
     });
@@ -361,6 +378,7 @@ document.addEventListener("DOMContentLoaded", () => {
     editingMappingId = null;
     addMappingForm.reset();
     updateDynamicFields();
+    document.getElementById("osc-address").value = ""; // Clear OSC address field
     dialogTitle.textContent = "New OSC Mapping";
     dialogSubmitBtn.textContent = "Create Mapping";
     addMappingDialog.showModal();
@@ -395,6 +413,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (editingMappingId) {
+      // Add ID to mappingData for PUT request
+      mappingData.id = editingMappingId;
       await fetchAPI(`/api/mappings/${editingMappingId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -457,23 +477,69 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // --- NEW: Upload Mappings Only Event Handler ---
+  uploadMappingsInput.addEventListener("change", async () => {
+    const file = uploadMappingsInput.files[0];
+    if (!file) {
+      uploadMappingsFilenameSpan.textContent = "No file selected.";
+      return;
+    }
+
+    uploadMappingsFilenameSpan.textContent = `Selected: ${file.name}`;
+
+    if (!confirm(`Are you sure you want to upload mappings from ${file.name}? Existing mappings with matching OSC addresses will be overwritten.`)) {
+      uploadMappingsInput.value = ""; // Reset the input
+      uploadMappingsFilenameSpan.textContent = "No file selected.";
+      return;
+    }
+
+    try {
+      const fileContent = await file.text();
+      const mappingsData = JSON.parse(fileContent);
+
+      const response = await fetch(`${API_BASE_URL}/api/mappings/upload-json`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(mappingsData), // Send the parsed JSON directly
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Upload failed");
+      }
+
+      alert(result.message);
+      loadInitialData(); // Reload the entire UI with the new mappings
+    } catch (error) {
+      alert(`Error: ${error.message}`);
+    } finally {
+      uploadMappingsInput.value = ""; // Reset the input
+      uploadMappingsFilenameSpan.textContent = "No file selected.";
+    }
+  });
+
+
   function populateFormForEdit(mapping) {
     addMappingForm.reset();
     document.getElementById("osc-address").value = mapping.osc_address;
 
-    const msg = mapping.midi_sequence[0];
-    let category = "";
+    // Use a copy to avoid modifying the original config.
+    const midi_sequence_copy = [...mapping.midi_sequence];
 
-    // Determine category from MIDI message
-    if (mapping.description.includes("Setlist")) {
+    // Determine category from MIDI message (prioritize explicit checks)
+    let category = "";
+    if (midi_sequence_copy.some(m => m.control === 0 && m.type === 'control_change') &&
+      midi_sequence_copy.some(m => m.control === 32 && m.type === 'control_change') &&
+      midi_sequence_copy.some(m => m.type === 'program_change')) {
       category = "patch";
-    } else if (msg.control === 43) {
+    } else if (midi_sequence_copy.some(m => m.control === 43 && m.type === 'control_change')) {
       category = "scene";
-    } else if (msg.control >= 35 && msg.control <= 42) {
+    } else if (midi_sequence_copy.some(m => m.control >= 35 && m.control <= 42 && m.type === 'control_change')) {
       category = "footswitch";
-    } else if ([45, 46, 47].includes(msg.control)) {
+    } else if (midi_sequence_copy.some(m => [45, 46, 47].includes(m.control) && m.type === 'control_change')) {
       category = "mode_view";
-    } else if ([48, 50, 51, 53, 54, 55, 56].includes(msg.control)) {
+    } else if (midi_sequence_copy.some(m => [48, 50, 51, 53, 54, 55, 56].includes(m.control) && m.type === 'control_change')) {
       category = "looper";
     }
 
@@ -483,27 +549,34 @@ document.addEventListener("DOMContentLoaded", () => {
     // Populate the specific fields for the category
     switch (category) {
       case "patch": {
-        const setlistMsg = mapping.midi_sequence.find((m) => m.control === 32);
-        const bankMsg = mapping.midi_sequence.find((m) => m.control === 0);
-        const pcMsg = mapping.midi_sequence.find(
+        const setlistMsg = midi_sequence_copy.find((m) => m.control === 32);
+        const bankMsg = midi_sequence_copy.find((m) => m.control === 0);
+        const pcMsg = midi_sequence_copy.find(
           (m) => m.type === "program_change",
         );
-        const setlist = setlistMsg.value;
-        const presetIndex = bankMsg.value * 128 + pcMsg.program;
+        const setlist = setlistMsg ? setlistMsg.value : 0;
+        const bank = bankMsg ? bankMsg.value : 0;
+        const program = pcMsg ? pcMsg.program : 0;
+
+        const presetIndex = bank * 128 + program;
         const patchNum = Math.floor(presetIndex / 8) + 1;
         const patchLetterVal = presetIndex % 8;
+
         document.getElementById("patch-setlist").value = setlist + 1;
         document.getElementById("patch-number").value = patchNum;
         document.getElementById("patch-letter").value = patchLetterVal;
         break;
       }
       case "scene":
-        document.getElementById("scene-select").value = msg.value;
+        // Assuming single message for scene, otherwise find the relevant one
+        document.getElementById("scene-select").value = midi_sequence_copy.find(m => m.control === 43)?.value || 0;
         break;
       case "footswitch":
-        document.getElementById("footswitch-select").value = msg.control;
+        // Assuming single message for footswitch, otherwise find the relevant one
+        document.getElementById("footswitch-select").value = midi_sequence_copy.find(m => m.control >= 35 && m.control <= 42)?.control || 35;
         break;
       case "mode_view": {
+        const msg = midi_sequence_copy[0]; // Assuming one message for simplicity
         let action = "";
         if (msg.control === 47) {
           if (msg.value === 0) action = "mode_preset";
@@ -518,6 +591,7 @@ document.addEventListener("DOMContentLoaded", () => {
         break;
       }
       case "looper": {
+        const msg = midi_sequence_copy[0]; // Assuming one message for simplicity
         let action = "";
         if (msg.control === 53) action = "rec_stop";
         else if (msg.control === 54) action = "play_stop";

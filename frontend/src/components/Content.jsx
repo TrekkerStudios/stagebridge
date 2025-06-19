@@ -41,14 +41,23 @@ export const Content = () => (
                         <div class="button-group">
                             <button id="download-config-btn">Download Config</button>
                             <label for="upload-config-input" class="button-like-label">
-                                Upload Config
+                                Upload Full Config
                             </label>
                             <input type="file" id="upload-config-input" accept=".json" hidden />
                             <span id="upload-filename">No file selected.</span>
                         </div>
+                        <p class="small-text">
+                            Upload a JSON file containing only mappings. Existing mappings with the same OSC address will be overwritten.
+                        </p>
+                        <div class="button-group">
+                            <label for="upload-mappings-input" class="button-like-label">
+                                Upload Mappings Only
+                            </label>
+                            <input type="file" id="upload-mappings-input" accept=".json" hidden />
+                            <span id="upload-mappings-filename">No file selected.</span>
+                        </div>
                         <p class="warning-text">
-                            Warning: Uploading will overwrite all current mappings and settings.
-                            A script restart may be required.
+                            Warning: Uploading full config or mappings will overwrite current data.
                         </p>
                     </div>
                 </section>
