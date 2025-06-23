@@ -8,16 +8,23 @@ from ableton import AbletonProjectEditor
 
 
 def find_session_folders(root_folder: Path) -> List[Path]:
-    """Find all session folders in the root directory"""
+    """Find all session folders by searching one level deep from the root directory."""
     session_folders = []
+    print(f"Searching for session folders in subdirectories of {root_folder}...")
 
-    for item in root_folder.iterdir():
-        if item.is_dir():
-            # Look for .txt files in this directory
-            txt_files = list(item.glob("*.txt"))
-            if txt_files:
-                session_folders.append(item)
-                print(f"Found session folder: {item.name}")
+    # Iterate through the top-level genre folders (e.g., "NN 4 - DANCE + POP SD")
+    for genre_folder in root_folder.iterdir():
+        if not genre_folder.is_dir():
+            continue
+
+        # Now iterate through the actual session folders inside the genre folder
+        for session_folder in genre_folder.iterdir():
+            if session_folder.is_dir():
+                # Look for .txt files to confirm it's a session folder
+                txt_files = list(session_folder.glob("*.txt"))
+                if txt_files:
+                    session_folders.append(session_folder)
+                    print(f"Found session folder: {session_folder.name}")
 
     return session_folders
 
@@ -50,6 +57,13 @@ def process_session_folder(
             session_end_beat,
         ) = session_parser.parse()
 
+        # Create audio file mapper and get song duration
+        audio_mapper = AudioFileMapper(session_folder)
+        max_duration_sec = audio_mapper.get_max_duration()
+        # Format duration into mm:ss
+        minutes, seconds = divmod(max_duration_sec, 60)
+        duration_str = f"{int(minutes):02d}.{int(seconds):02d}"
+
         # Determine project names (cased for files, normalized for OSC)
         if session_parser.original_song_name:
             project_name_cased = session_parser.original_song_name
@@ -61,23 +75,23 @@ def process_session_folder(
                 session_folder.stem
             )
 
+        # Construct the final project name with duration
+        final_project_name = f"{project_name_cased} [{duration_str}]"
+
         print(f"Found {len(markers)} valid markers")
         print(f"Found {len(tempo_changes)} tempo changes")
         print(f"Found {len(time_signature_changes)} time signature changes")
         if session_end_beat:
             print(f"Session ends at beat {session_end_beat}")
-        print(f"Project Name: '{project_name_cased}'")
-
-        # Create audio file mapper
-        audio_mapper = AudioFileMapper(session_folder)
+        print(f"Project Name: '{final_project_name}'")
 
         # Load and modify Ableton project
         print(f"Loading skeleton project: {skeleton_file}")
         editor = AbletonProjectEditor(skeleton_file)
         editor.load()
 
-        # Create project folder structure
-        project_folder = output_dir / f"{project_name_cased} Project"
+        # Create project folder structure with the new name
+        project_folder = output_dir / f"{final_project_name} Project"
         project_folder.mkdir(exist_ok=True)
 
         # Create samples directory
@@ -108,8 +122,8 @@ def process_session_folder(
         print("Applying time signature changes...")
         editor.apply_time_signature_changes(time_signature_changes)
 
-        # Save modified project (using cased name)
-        output_file = project_folder / f"{project_name_cased}.als"
+        # Save modified project (using the new name with duration)
+        output_file = project_folder / f"{final_project_name}.als"
         editor.save(output_file)
 
         print(f"Success! Created complete project in {project_folder}")

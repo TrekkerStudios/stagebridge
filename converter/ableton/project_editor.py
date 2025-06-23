@@ -384,17 +384,17 @@ class AbletonProjectEditor:
         # Update file reference
         file_ref = new_clip.find(".//SampleRef/FileRef")
         if file_ref is not None:
+            relative_path_string = f"Samples/Imported/{audio_file_path.name}"
+
             # Update relative path
             relative_path_elem = file_ref.find("RelativePath")
             if relative_path_elem is not None:
-                relative_path_elem.set(
-                    "Value", f"Samples/Imported/{audio_file_path.name}"
-                )
+                relative_path_elem.set("Value", relative_path_string)
 
-            # Update absolute path (this will be project-specific)
+            # Update absolute path to also be relative from the project root
             path_elem = file_ref.find("Path")
             if path_elem is not None:
-                path_elem.set("Value", str(audio_file_path.absolute()))
+                path_elem.set("Value", relative_path_string)
 
         # Add the clip to the events container
         events_container.append(new_clip)
