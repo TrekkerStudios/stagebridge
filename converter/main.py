@@ -23,7 +23,7 @@ def main():
     args = parser.parse_args()
     
     # Hardcoded paths
-    skeleton_file = Path("./utils/skeleton Project/skeleton.als")
+    skeleton_file = Path("./ableton/skeleton Project/skeleton.als")
     output_dir = Path("./output")
     
     # Validate input folder
