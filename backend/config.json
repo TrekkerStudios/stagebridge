@@ -1,10 +1,10 @@
 {
   "midi_input_name": "",
-  "midi_output_name": "",
+  "midi_output_name": "IAC Driver Bus 1",
   "osc_mappings": [
     {
-      "description": "QC: Setlist 1, Patch 1D",
-      "id": "63a74df835f14a55b29f651e11072473",
+      "osc_address": "/tyler/qc/1a",
+      "description": "QC: Setlist 5, Patch 1A",
       "midi_sequence": [
         {
           "type": "control_change",
@@ -16,7 +16,79 @@
           "type": "control_change",
           "channel": 1,
           "control": 32,
+          "value": 4
+        },
+        {
+          "type": "program_change",
+          "channel": 1,
+          "program": 0
+        }
+      ],
+      "id": "fb63361f26bf46939db24be55a5eea6e"
+    },
+    {
+      "osc_address": "/tyler/qc/1b",
+      "description": "QC: Setlist 5, Patch 1B",
+      "midi_sequence": [
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 0,
           "value": 0
+        },
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 32,
+          "value": 4
+        },
+        {
+          "type": "program_change",
+          "channel": 1,
+          "program": 1
+        }
+      ],
+      "id": "68ee5d4d68084485984d178cd44a8250"
+    },
+    {
+      "osc_address": "/tyler/qc/1c",
+      "description": "QC: Setlist 5, Patch 1C",
+      "midi_sequence": [
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 0,
+          "value": 0
+        },
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 32,
+          "value": 4
+        },
+        {
+          "type": "program_change",
+          "channel": 1,
+          "program": 2
+        }
+      ],
+      "id": "18061f1457174df6b9499ac37e0b6500"
+    },
+    {
+      "osc_address": "/tyler/qc/1d",
+      "description": "QC: Setlist 5, Patch 1D",
+      "midi_sequence": [
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 0,
+          "value": 0
+        },
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 32,
+          "value": 4
         },
         {
           "type": "program_change",
@@ -24,12 +96,11 @@
           "program": 3
         }
       ],
-      "osc_address": "/test1"
+      "id": "ba0611c5a50349e49cb062a2c91600c8"
     },
     {
-      "id": "e0b37edf3fcf4d5393285b862764a4bb",
-      "osc_address": "/patch/watchtower/1_of_4",
-      "description": "QC: Setlist 1, Patch 2A",
+      "osc_address": "/tyler/qc/1e",
+      "description": "QC: Setlist 5, Patch 1E",
       "midi_sequence": [
         {
           "type": "control_change",
@@ -41,19 +112,115 @@
           "type": "control_change",
           "channel": 1,
           "control": 32,
+          "value": 4
+        },
+        {
+          "type": "program_change",
+          "channel": 1,
+          "program": 4
+        }
+      ],
+      "id": "6964d15450d944ce9587ec615867255d"
+    },
+    {
+      "osc_address": "/tyler/qc/1f",
+      "description": "QC: Setlist 5, Patch 1F",
+      "midi_sequence": [
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 0,
           "value": 0
+        },
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 32,
+          "value": 4
+        },
+        {
+          "type": "program_change",
+          "channel": 1,
+          "program": 5
+        }
+      ],
+      "id": "882c29b1db25476ca76c775c2572b42d"
+    },
+    {
+      "osc_address": "/tyler/qc/1g",
+      "description": "QC: Setlist 5, Patch 1G",
+      "midi_sequence": [
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 0,
+          "value": 0
+        },
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 32,
+          "value": 4
+        },
+        {
+          "type": "program_change",
+          "channel": 1,
+          "program": 6
+        }
+      ],
+      "id": "bfc1af991b3042bc9232c4db507670d9"
+    },
+    {
+      "osc_address": "/tyler/qc/1h",
+      "description": "QC: Setlist 5, Patch 1H",
+      "midi_sequence": [
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 0,
+          "value": 0
+        },
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 32,
+          "value": 4
+        },
+        {
+          "type": "program_change",
+          "channel": 1,
+          "program": 7
+        }
+      ],
+      "id": "8e9a2b41b610454482371e59fdc0c5b0"
+    },
+    {
+      "osc_address": "/tyler/qc/2a",
+      "description": "QC: Setlist 5, Patch 2A",
+      "midi_sequence": [
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 0,
+          "value": 0
+        },
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 32,
+          "value": 4
         },
         {
           "type": "program_change",
           "channel": 1,
           "program": 8
         }
-      ]
+      ],
+      "id": "0fd1b651b5ea48369a62bb16bfc0786b"
     },
     {
-      "id": "2489a982154f4f9683d37545dcded795",
-      "osc_address": "/patch/watchtower/2_of_4",
-      "description": "QC: Setlist 1, Patch 3A",
+      "osc_address": "/tyler/qc/2b",
+      "description": "QC: Setlist 5, Patch 2B",
       "midi_sequence": [
         {
           "type": "control_change",
@@ -65,18 +232,218 @@
           "type": "control_change",
           "channel": 1,
           "control": 32,
-          "value": 0
+          "value": 4
         },
         {
           "type": "program_change",
           "channel": 1,
-          "program": 16
+          "program": 9
         }
-      ]
+      ],
+      "id": "b98fdf84edd140ca9cc2090360471f1c"
     },
     {
-      "id": "8be357ca33944264b0cfa8c2b7e23449",
-      "osc_address": "/patch/watchtower/3_of_4",
+      "osc_address": "/tyler/qc/2c",
+      "description": "QC: Setlist 5, Patch 2C",
+      "midi_sequence": [
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 0,
+          "value": 0
+        },
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 32,
+          "value": 4
+        },
+        {
+          "type": "program_change",
+          "channel": 1,
+          "program": 10
+        }
+      ],
+      "id": "6546afea54c34029bad1bcc7d60867ac"
+    },
+    {
+      "osc_address": "/tyler/qc/2d",
+      "description": "QC: Setlist 5, Patch 2D",
+      "midi_sequence": [
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 0,
+          "value": 0
+        },
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 32,
+          "value": 4
+        },
+        {
+          "type": "program_change",
+          "channel": 1,
+          "program": 11
+        }
+      ],
+      "id": "9e9968faae0049b8880741135a6b7898"
+    },
+    {
+      "osc_address": "/tyler/qc/2e",
+      "description": "QC: Setlist 5, Patch 2E",
+      "midi_sequence": [
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 0,
+          "value": 0
+        },
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 32,
+          "value": 4
+        },
+        {
+          "type": "program_change",
+          "channel": 1,
+          "program": 12
+        }
+      ],
+      "id": "097a1ec23c374062b92078a54a3fbdf8"
+    },
+    {
+      "osc_address": "/tyler/qc/2f",
+      "description": "QC: Setlist 5, Patch 2F",
+      "midi_sequence": [
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 0,
+          "value": 0
+        },
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 32,
+          "value": 4
+        },
+        {
+          "type": "program_change",
+          "channel": 1,
+          "program": 13
+        }
+      ],
+      "id": "01a1245f078546aa861f93979b37678a"
+    },
+    {
+      "osc_address": "/quad/scene/a",
+      "description": "QC: Select Scene A",
+      "midi_sequence": [
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 43,
+          "value": 0
+        }
+      ],
+      "id": "8219d82311a4489ab861e8c573deb706"
+    },
+    {
+      "osc_address": "/quad/scene/b",
+      "description": "QC: Select Scene B",
+      "midi_sequence": [
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 43,
+          "value": 1
+        }
+      ],
+      "id": "5f0f8506329440ddb323132c656c283a"
+    },
+    {
+      "osc_address": "/quad/scene/c",
+      "description": "QC: Select Scene C",
+      "midi_sequence": [
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 43,
+          "value": 2
+        }
+      ],
+      "id": "495bec565fc24f029a65abf9144f87a6"
+    },
+    {
+      "osc_address": "/quad/scene/d",
+      "description": "QC: Select Scene D",
+      "midi_sequence": [
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 43,
+          "value": 3
+        }
+      ],
+      "id": "8bacfdbe192d4d9a98bd683eaa92a2c7"
+    },
+    {
+      "osc_address": "/quad/scene/e",
+      "description": "QC: Select Scene E",
+      "midi_sequence": [
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 43,
+          "value": 4
+        }
+      ],
+      "id": "e66aacf7771c45f59bb62a5f64c05a95"
+    },
+    {
+      "osc_address": "/quad/scene/f",
+      "description": "QC: Select Scene F",
+      "midi_sequence": [
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 43,
+          "value": 5
+        }
+      ],
+      "id": "b19bdb240fa349edb38d11b637a50ad0"
+    },
+    {
+      "osc_address": "/quad/scene/g",
+      "description": "QC: Select Scene G",
+      "midi_sequence": [
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 43,
+          "value": 6
+        }
+      ],
+      "id": "421904c077ce4328a788e51ab658c8cc"
+    },
+    {
+      "osc_address": "/quad/scene/h",
+      "description": "QC: Select Scene H",
+      "midi_sequence": [
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 43,
+          "value": 7
+        }
+      ],
+      "id": "fb6e5d3940d64a76b7a328db8001fc58"
+    },
+    {
+      "osc_address": "/quad/fs/a",
       "description": "QC: Toggle Footswitch A",
       "midi_sequence": [
         {
@@ -85,35 +452,103 @@
           "control": 35,
           "value": 127
         }
-      ]
+      ],
+      "id": "b8102965e5d64067855a183937f3e90d"
     },
     {
-      "id": "4525fb782244434a912b2c89e94d4889",
-      "osc_address": "/patch/watchtower/4_of_4",
-      "description": "QC: Setlist 1, Patch 2A",
+      "osc_address": "/quad/fs/b",
+      "description": "QC: Toggle Footswitch B",
       "midi_sequence": [
         {
           "type": "control_change",
           "channel": 1,
-          "control": 0,
-          "value": 0
-        },
+          "control": 36,
+          "value": 127
+        }
+      ],
+      "id": "4996cb01cfd54180a44d87c2661d8d58"
+    },
+    {
+      "osc_address": "/quad/fs/c",
+      "description": "QC: Toggle Footswitch C",
+      "midi_sequence": [
         {
           "type": "control_change",
           "channel": 1,
-          "control": 32,
-          "value": 0
-        },
-        {
-          "type": "program_change",
-          "channel": 1,
-          "program": 8
+          "control": 37,
+          "value": 127
         }
-      ]
+      ],
+      "id": "9ed648f9d96c428dbbec5421c556d75d"
+    },
+    {
+      "osc_address": "/quad/fs/d",
+      "description": "QC: Toggle Footswitch D",
+      "midi_sequence": [
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 38,
+          "value": 127
+        }
+      ],
+      "id": "e142c73f351b455d8e610321449a5ae9"
+    },
+    {
+      "osc_address": "/quad/fs/e",
+      "description": "QC: Toggle Footswitch E",
+      "midi_sequence": [
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 39,
+          "value": 127
+        }
+      ],
+      "id": "e274f5652b5549b698e654e5679166a1"
+    },
+    {
+      "osc_address": "/quad/fs/f",
+      "description": "QC: Toggle Footswitch F",
+      "midi_sequence": [
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 40,
+          "value": 127
+        }
+      ],
+      "id": "1f953a2bcd2c4cdebe2d917949eebea8"
+    },
+    {
+      "osc_address": "/quad/fs/g",
+      "description": "QC: Toggle Footswitch G",
+      "midi_sequence": [
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 41,
+          "value": 127
+        }
+      ],
+      "id": "eff21acf33264c1fa8b73d5f415fdc3b"
+    },
+    {
+      "osc_address": "/quad/fs/h",
+      "description": "QC: Toggle Footswitch H",
+      "midi_sequence": [
+        {
+          "type": "control_change",
+          "channel": 1,
+          "control": 42,
+          "value": 127
+        }
+      ],
+      "id": "2efe31861221484e833961740a62b5b1"
     }
   ],
   "osc_server_ip": "0.0.0.0",
-  "osc_server_port": 9000,
+  "osc_server_port": 8000,
   "rtp_midi_target_ip": "1.1.1.1",
   "rtp_midi_target_port": 4999,
   "song_parser_settings": {
