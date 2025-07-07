@@ -1,7 +1,8 @@
 {
   "name": "frontend",
   "scripts": {
-    "dev": "bun run --hot src/index.jsx"
+    "dev": "bun run --hot src/index.jsx",
+    "build": "bun build ./src/index.jsx --outdir ./dist --outfile index.js --minify"
   },
   "dependencies": {
     "hono": "^4.7.11"

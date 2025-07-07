@@ -6,6 +6,7 @@ import os
 import time
 import threading
 import socket
+import logging
 from mido import get_input_names, get_output_names
 
 # Import from our new modules
@@ -15,18 +16,40 @@ from osc_server import start_osc_server
 from web_server import create_app
 from discovery import start_discovery_service
 
+# Add a global flag to check if exit sequence started
+exit_sequence_initiated = False
+
 def trigger_restart():
     """Exits the script cleanly, relying on systemd to restart it."""
-    print("INFO: Received restart command. Exiting for systemd to handle restart.")
+    global exit_sequence_initiated
+    if exit_sequence_initiated:
+        print("WARNING: Restart sequence already initiated. Ignoring redundant call.")
+        sys.stdout.flush()
+        return
+
+    print("INFO: [trigger_restart] Received restart command.")
+    sys.stdout.flush() # Ensure this initial print is flushed
+
+    exit_sequence_initiated = True
+
     def do_exit():
-        time.sleep(1)
-        sys.exit(0)
+        print("INFO: [do_exit] Thread started. Waiting 1 second before exit...")
+        sys.stdout.flush()
+        time.sleep(1) # Gives the HTTP response a chance to go out
+        print("INFO: [do_exit] 1 second passed. Attempting sys.exit(0)...")
+        sys.stdout.flush()
+        os._exit(0) # Exits the current Python process
     
+    print("INFO: [trigger_restart] Starting exit thread...")
+    sys.stdout.flush()
     exit_thread = threading.Thread(target=do_exit)
-    exit_thread.daemon = True
+    exit_thread.daemon = True # Allows program to exit if only this thread remains
     exit_thread.start()
+    print("INFO: [trigger_restart] Exit thread started. Main thread continues briefly.")
+    sys.stdout.flush()
 
 if __name__ == "__main__":
+    sys.stdout.flush() # Flush initial print
     print("--- Starting StageBridge Service ---")
     
     # 1. Load configuration into shared state
@@ -53,6 +76,11 @@ if __name__ == "__main__":
     
     device_name = f"StageBridge-{socket.gethostname()}"
     start_discovery_service(port=FLASK_API_PORT, device_name=device_name)
+    
+    logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s - %(levelname)s - %(message)s',
+                    stream=sys.stdout) # You can try sys.stderr too
+    app.logger.setLevel(logging.INFO)
     
     # 6. Run the web server (this will block and be the main thread)
     print(f"Starting Flask API server on http://0.0.0.0:{FLASK_API_PORT}")

@@ -22,7 +22,8 @@ def _osc_handler(address, *args):
             for midi_info in midi_sequence:
                 try:
                     msg_type = midi_info["type"]
-                    channel = int(midi_info["channel"]) - 1
+                    # channel = int(midi_info["channel"]) - 1
+                    channel = int(midi_info["channel"])
                     if msg_type == "program_change":
                         msg = Message("program_change", channel=channel, program=int(midi_info["program"]))
                     elif msg_type == "control_change":
