@@ -9,3 +9,4 @@ services:
       - "9000:9000"
     devices:
       - /dev/snd:/dev/snd
+    # privileged: true # only if needed
