@@ -1,0 +1,223 @@
+:root {
+  --bg-color: #1a1a1a;
+  --card-color: #2b2b2b;
+  --text-color: #e0e0e0;
+  --primary-color: #007bff;
+  --border-color: #444;
+  --input-bg: #333;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  margin: 0;
+  padding: 20px;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.card {
+  background-color: var(--card-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 20px;
+}
+
+h1,
+h2,
+h3 {
+  margin-top: 0;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 10px;
+}
+
+button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1em;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+input,
+select {
+  width: 100%;
+  padding: 8px;
+  background-color: var(--input-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.small-text {
+  font-size: 0.8em;
+  opacity: 0.7;
+  margin-top: 10px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 15px;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+th {
+  background-color: #333;
+}
+
+td button {
+  background-color: #dc3545;
+  font-size: 0.9em;
+  padding: 5px 10px;
+}
+
+dialog {
+  background-color: var(--card-color);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 20px;
+  width: 90%;
+  max-width: 500px;
+}
+
+dialog::backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+#add-mapping-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.dialog-actions button[type="button"] {
+  background-color: #6c757d;
+}
+
+.hidden {
+  display: none;
+}
+
+/* Add to style.css */
+.config-management {
+  margin-top: 25px;
+  padding-top: 15px;
+  border-top: 1px solid var(--border-color);
+}
+
+.button-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.button-like-label {
+  background-color: #6c757d;
+  color: white;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1em;
+  display: inline-block;
+}
+
+.button-like-label:hover {
+  opacity: 0.9;
+}
+
+.warning-text {
+  color: #ffc107;
+  font-size: 0.9em;
+  margin-top: 15px;
+}
+
+/* Add to style.css */
+.hidden {
+  display: none !important;
+}
+
+#restart-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  text-align: center;
+}
+
+.restart-message {
+  padding: 40px;
+  background-color: var(--card-color);
+  border-radius: 8px;
+}
+
+/* Recommended CSS for new elements */
+.table-actions {
+  margin-top: 15px;
+  display: flex;
+  gap: 10px;
+}
+
+.hidden {
+  display: none;
+}
+
+button.danger {
+  background-color: #dc3545;
+  /* A red color for destructive actions */
+  color: white;
+}
+
+button.danger:hover {
+  background-color: #c82333;
+}
+
+#mappings-table .checkbox-cell {
+  width: 20px;
+  text-align: center;
+}

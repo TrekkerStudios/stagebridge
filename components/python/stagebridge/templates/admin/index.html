@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>StageBridge Network Admin</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        background-color: #1a1a1a;
+        color: #e0e0e0;
+        margin: 40px;
+      }
+      .container {
+        max-width: 600px;
+        margin: auto;
+        background-color: #2b2b2b;
+        padding: 20px;
+        border-radius: 8px;
+      }
+      h1,
+      h2 {
+        border-bottom: 1px solid #444;
+        padding-bottom: 10px;
+      }
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+      label {
+        font-weight: bold;
+      }
+      input {
+        width: 100%;
+        padding: 8px;
+        background-color: #333;
+        color: #e0e0e0;
+        border: 1px solid #444;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+      input[readonly] {
+        background-color: #444;
+        cursor: not-allowed;
+      }
+      button {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1em;
+      }
+      .warning {
+        color: #ffc107;
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Network Admin</h1>
+      <p>Configure core network settings. Changes require a service restart.</p>
+      <form method="POST">
+        <h2>OSC Server (Incoming)</h2>
+        <div class="form-grid">
+          <div>
+            <label for="osc_server_ip">Listen IP Address</label>
+            <input
+              type="text"
+              id="osc_server_ip"
+              name="osc_server_ip"
+              value="{{ config.osc_server_ip }}"
+              readonly
+            />
+          </div>
+          <div>
+            <label for="osc_server_port">Listen Port</label>
+            <input
+              type="number"
+              id="osc_server_port"
+              name="osc_server_port"
+              value="{{ config.osc_server_port }}"
+              required
+            />
+          </div>
+        </div>
+        <h2>RTP-MIDI (Outgoing)</h2>
+        <div class="form-grid">
+          <div>
+            <label for="rtp_midi_target_ip">Target IP Address</label>
+            <input
+              type="text"
+              id="rtp_midi_target_ip"
+              name="rtp_midi_target_ip"
+              value="{{ config.rtp_midi_target_ip }}"
+              required
+            />
+          </div>
+          <div>
+            <label for="rtp_midi_target_port">Target Port</label>
+            <input
+              type="number"
+              id="rtp_midi_target_port"
+              name="rtp_midi_target_port"
+              value="{{ config.rtp_midi_target_port }}"
+              required
+            />
+          </div>
+        </div>
+        <button type="submit">Save & Restart Service</button>
+        <p class="warning">
+          <strong>Warning:</strong> Saving will immediately restart the entire
+          StageBridge service.
+        </p>
+      </form>
+    </div>
+  </body>
+</html>
