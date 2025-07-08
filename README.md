@@ -3,10 +3,11 @@
 ## Components
 
 ### stagebridge (python)
-* Main backend/frontend
+* Main backend/frontend (runs on satellite)
 * osc to midi WORKING
 * web based config editing WORKING
 * rtp midi MIXED RESULTS
+* docker CURSORY IMPLEMENTATION (works on Linux?; can't access midi devices on Mac/Win)
 
 ### fleet (python)
 * Fleet controller (runs on master computer)
