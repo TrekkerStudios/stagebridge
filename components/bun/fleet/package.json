@@ -1,0 +1,24 @@
+{
+  "name": "fleet",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node src/index.js",
+    "prebuild": "node embed_assets.js",
+    "compile": "bun build ./src/index.js --minify --compile",
+    "build": "bun run compile --outfile stagebridge-manager && chmod +x stagebridge-manager",
+    "build-win": "bun run compile --outfile stagebridge-manager.exe --target=windows-x64",
+    "build-nix": "bun run compile --outfile stagebridge-manager-linux --target=linux-x64"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.8.0",
+  "dependencies": {
+    "bonjour": "^3.5.0",
+    "hono": "^4.8.0"
+  }
+}
