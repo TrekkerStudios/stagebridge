@@ -5,6 +5,9 @@ import { jsx, Fragment } from "hono/jsx";
 import { Hono } from "hono";
 import { serveStatic } from 'hono/bun'
 
+import './public/style.css';
+import './public/main.js';
+
 import { Layout } from "./components/Layout.jsx";
 import { GeneratorPage } from "./components/GeneratorPage.jsx";
 

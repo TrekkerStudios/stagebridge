@@ -4,10 +4,19 @@
   "description": "A standalone web app to generate StageBridge mappings.",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/index.js"
+    "dev": "bun run --hot src/index.js",
+    "build": "vite build"
   },
   "dependencies": {
-    "hono": "^4.3.11"
+    "hono": "^4.8.4"
+  },
+  "devDependencies": {
+    "@hono/vite-build": "^1.6.2",
+    "@hono/vite-cloudflare-pages": "^0.4.2",
+    "@hono/vite-dev-server": "^0.18.3",
+    "tsx": "^4.20.3",
+    "vite": "^6.3.5",
+    "wrangler": "^4.24.0"
   },
   "type": "module"
 }
