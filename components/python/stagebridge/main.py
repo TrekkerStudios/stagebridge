@@ -17,6 +17,9 @@ from web_server import create_app
 from client_web_server import create_client_app
 from discovery import start_discovery_service
 
+# Import the Kivy GUI app
+from gui import StageBridgeApp
+
 # Global state for API/Admin server management
 exit_sequence_initiated = False
 global_api_admin_app = None
@@ -121,7 +124,11 @@ def trigger_full_process_restart():
 # Use this as the restart callback for the API/Admin server
 trigger_restart = restart_api_admin_service
 
-if __name__ == "__main__":
+def start_all_services():
+    """
+    Start all background services and servers.
+    This function is run in a background thread so the main thread can run the GUI.
+    """
     sys.stdout.flush()
     print("--- Starting StageBridge ---\n")
 
@@ -146,6 +153,7 @@ if __name__ == "__main__":
     print("--- MIDI and OSC services started ---\n")
 
     # Create Flask apps
+    global global_api_admin_app, global_api_admin_server, global_api_server_thread
     global_api_admin_app = create_app(restart_callback=trigger_restart)
     client_frontend_app = create_client_app()
 
@@ -180,10 +188,8 @@ if __name__ == "__main__":
     global_api_admin_app.logger.setLevel(logging.INFO)
     client_frontend_app.logger.setLevel(logging.INFO)
 
-    # Keep the main thread alive
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        print("\nINFO: Ctrl+C detected. Shutting down...")
-        sys.exit(0)
+if __name__ == "__main__":
+    # Start all services in a background thread
+    threading.Thread(target=start_all_services, daemon=True).start()
+    # Run the Kivy GUI in the main thread
+    StageBridgeApp().run()
