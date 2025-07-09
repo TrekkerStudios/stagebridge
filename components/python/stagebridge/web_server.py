@@ -1,4 +1,3 @@
-# web_server.py
 import os
 import json
 import uuid
@@ -14,20 +13,16 @@ from flask_cors import CORS
 from werkzeug.utils import secure_filename
 from mido import get_input_names, get_output_names
 
-# Import from our other modules
 import shared_state
 import config_manager
 from song_parser import parse_song_csv
 
-# Define the static folder path relative to this file
 STATIC_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 TEMPLATE_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
-app = Flask(__name__, static_folder=STATIC_FOLDER, template_folder=TEMPLATE_FOLDER)
-CORS(app)
-
 
 def create_app(restart_callback):
-    """Creates and configures the Flask application."""
+    app = Flask(__name__, static_folder=STATIC_FOLDER, template_folder=TEMPLATE_FOLDER)
+    CORS(app)
 
     @app.route("/")
     def serve_index():
@@ -143,15 +138,12 @@ def create_app(restart_callback):
 
     @app.route("/api/mappings", methods=["POST", "DELETE"])
     def manage_mappings_plural():
-        # Handle creating a single new mapping
         if request.method == "POST":
             mapping = request.json
             mapping["id"] = uuid.uuid4().hex
             shared_state.config["osc_mappings"].append(mapping)
             config_manager.save_config()
             return jsonify(mapping), 201
-
-        # NEW: Handle deleting multiple mappings
         elif request.method == "DELETE":
             data = request.get_json()
             if not data or "ids" not in data or not isinstance(data["ids"], list):
@@ -161,18 +153,13 @@ def create_app(restart_callback):
                     ),
                     400,
                 )
-
             ids_to_delete = set(data["ids"])
             current_mappings = shared_state.config["osc_mappings"]
-
-            # Filter the list, keeping only mappings whose IDs are NOT in the set to be deleted
             updated_mappings = [
                 m for m in current_mappings if m.get("id") not in ids_to_delete
             ]
-
             shared_state.config["osc_mappings"] = updated_mappings
             config_manager.save_config()
-
             return jsonify(
                 {"message": f"{len(ids_to_delete)} mappings deleted successfully."}
             )
@@ -198,46 +185,32 @@ def create_app(restart_callback):
     def upload_json_mappings():
         if not request.is_json:
             return jsonify({"error": "Request must be JSON"}), 400
-
         try:
             new_mappings_data = request.json
             if not isinstance(new_mappings_data, list):
                 return jsonify({"error": "Expected a JSON array of mappings"}), 400
-
             current_mappings_dict = {
                 m["osc_address"]: m for m in shared_state.config.get("osc_mappings", [])
             }
-
             added_count = 0
             updated_count = 0
-
             for new_mapping in new_mappings_data:
-                # Basic validation: ensure it has an osc_address
                 if "osc_address" not in new_mapping:
                     print(
                         f"Warning: Skipping mapping due to missing 'osc_address': {new_mapping}"
                     )
                     continue
-
                 osc_address = new_mapping["osc_address"]
-
-                # Assign a new ID if it doesn't have one, or ensure it's a string if it does
                 if "id" not in new_mapping or not isinstance(new_mapping["id"], str):
                     new_mapping["id"] = uuid.uuid4().hex
-
                 if osc_address in current_mappings_dict:
-                    # Overwrite existing mapping
                     current_mappings_dict[osc_address] = new_mapping
                     updated_count += 1
                 else:
-                    # Add new mapping
                     current_mappings_dict[osc_address] = new_mapping
                     added_count += 1
-
-            # Convert the dict back to a list for storing in config
             shared_state.config["osc_mappings"] = list(current_mappings_dict.values())
             config_manager.save_config()
-
             return jsonify(
                 {
                     "message": f"Mappings uploaded successfully. Added: {added_count}, Updated: {updated_count}.",
@@ -245,7 +218,6 @@ def create_app(restart_callback):
                     "updated_count": updated_count,
                 }
             )
-
         except json.JSONDecodeError:
             return jsonify({"error": "Invalid JSON format"}), 400
         except Exception as e:
