@@ -1,6 +1,6 @@
 {
   "midi_input_name": "",
-  "midi_output_name": "Quad Cortex",
+  "midi_output_name": "IAC Driver Bus 1",
   "osc_mappings": [
     {
       "description": "QC: Setlist 5, Patch 1A",

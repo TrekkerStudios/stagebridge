@@ -1,7 +1,8 @@
 #!/bin/bash
 
 cd ~/VSCode/stagebridge/bin
-./stagebridge &
+./sb-beta &
+#./stagebridge &
 PYTHON_PID=$!
 
 cleanup() {
