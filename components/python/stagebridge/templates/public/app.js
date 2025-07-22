@@ -72,8 +72,30 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
+  const fetchServerIP = async () => {
+    const ipElement = document.getElementById('server-ip');
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/system/ip`);
+      const data = await response.json();
+
+      if (response.ok && data.ip_address) {
+        ipElement.textContent = data.ip_address;
+        ipElement.classList.remove('error');
+      } else {
+        throw new Error(data.error || 'Unknown error');
+      }
+    } catch (error) {
+      console.error('Failed to fetch server IP:', error);
+      ipElement.textContent = 'Unable to determine IP';
+      ipElement.classList.add('error');
+    }
+  };
+
   // --- INITIALIZATION & UI RENDERING ---
   const loadInitialData = async () => {
+    await fetchServerIP();
+
     const ports = await fetchAPI("/api/midi-ports");
     if (ports) {
       populateSelect(midiInputSelect, ports.inputs);

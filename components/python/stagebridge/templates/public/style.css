@@ -221,3 +221,35 @@ button.danger:hover {
   width: 20px;
   text-align: center;
 }
+
+.ip-info {
+  background: #f8f9fa;
+  border-left: 4px solid #007bff;
+  margin-bottom: 20px;
+}
+
+.ip-display {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: monospace;
+}
+
+.ip-label {
+  font-weight: bold;
+  color: #495057;
+}
+
+.ip-address {
+  background: #e9ecef;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+  color: #007bff;
+  min-width: 120px;
+}
+
+.ip-address.error {
+  color: #dc3545;
+  background: #f8d7da;
+}

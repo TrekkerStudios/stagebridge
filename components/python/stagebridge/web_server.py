@@ -1,6 +1,7 @@
 import os
 import json
 import uuid
+import socket
 from flask import (
     Flask,
     jsonify,
@@ -81,6 +82,35 @@ def create_app(restart_callback):
             shared_state.config.update(request.json)
             config_manager.save_config()
             return jsonify({"message": "Config updated."})
+        
+    @app.route("/api/system/ip", methods=["GET"])
+    def get_system_ip():
+        try:
+            # Get hostname and resolve to IP
+            hostname = socket.gethostname()
+            local_ip = socket.gethostbyname(hostname)
+            
+            # If it returns loopback, try alternative method
+            if local_ip.startswith('127.'):
+                # Try to get IP from network interfaces
+                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                s.settimeout(0)
+                try:
+                    # Connect to a reserved IP that won't actually send data
+                    s.connect(('10.254.254.254', 1))
+                    local_ip = s.getsockname()[0]
+                except:
+                    local_ip = '127.0.0.1'
+                finally:
+                    s.close()
+            
+            return jsonify({"ip_address": local_ip})
+        
+        except Exception as e:
+            return jsonify({
+                "error": f"Could not determine IP address: {str(e)}",
+                "ip_address": "127.0.0.1"
+            }), 500
 
     @app.route("/api/config/download", methods=["GET"])
     def download_config():
