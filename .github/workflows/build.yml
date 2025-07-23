@@ -25,13 +25,6 @@ jobs:
             python-version: "3.11"
             binary-name: stagebridge
 
-          # Linux builds
-          - os: ubuntu-latest
-            platform: linux
-            arch: x64
-            python-version: "3.11"
-            binary-name: stagebridge
-
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -43,40 +36,10 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      # Platform-specific dependencies
-      - name: Install system dependencies (Ubuntu)
-        if: matrix.platform == 'linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libasound2-dev \
-            portaudio19-dev \
-            libportmidi-dev \
-            libmtdev1 \
-            libgl1-mesa-glx \
-            libglib2.0-0 \
-            libxkbcommon-x11-0 \
-            libxcb-icccm4 \
-            libxcb-image0 \
-            libxcb-keysyms1 \
-            libxcb-randr0 \
-            libxcb-render-util0 \
-            libxcb-xinerama0 \
-            libxcb-xfixes0 \
-            xvfb \
-            libsdl2-dev \
-            libsdl2-image-dev \
-            libsdl2-mixer-dev \
-            libsdl2-ttf-dev \
-            libfreetype6-dev \
-            libportmidi-dev
-
       - name: Install system dependencies (macOS)
-        if: matrix.platform == 'macos'
         run: |
           brew install portaudio portmidi sdl2 sdl2_image sdl2_mixer sdl2_ttf
 
-      # Python dependencies
       - name: Install Python dependencies
         working-directory: ./stagebridge
         run: |
@@ -84,9 +47,7 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
-      # Build with PyInstaller using command line arguments
       - name: Build with PyInstaller (macOS)
-        if: matrix.platform == 'macos'
         working-directory: ./stagebridge
         run: |
           pyinstaller main.py \
@@ -111,50 +72,7 @@ jobs:
             --target-arch ${{ matrix.arch }} \
             --distpath ../dist/macos-${{ matrix.arch }}
 
-      - name: Build with PyInstaller (Linux)
-        if: matrix.platform == 'linux'
-        working-directory: ./stagebridge
-        env:
-          # Use virtual display for headless environment
-          DISPLAY: ":99"
-          KIVY_WINDOW: "sdl2"
-          KIVY_GL_BACKEND: "gl"
-        run: |
-          # Start virtual display
-          Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-          sleep 3
-          
-          pyinstaller main.py \
-            --name stagebridge \
-            --onefile \
-            --console \
-            --add-data "templates:templates" \
-            --hidden-import "mido.backends.rtmidi" \
-            --hidden-import "mido.backends.portmidi" \
-            --hidden-import "mido.backends.pygame" \
-            --hidden-import "flask" \
-            --hidden-import "flask_cors" \
-            --hidden-import "pythonosc" \
-            --hidden-import "zeroconf" \
-            --hidden-import "rtmidi" \
-            --hidden-import "kivy" \
-            --hidden-import "kivy.core" \
-            --hidden-import "kivy.core.window" \
-            --hidden-import "kivy.core.window.window_sdl2" \
-            --hidden-import "kivy.core.window.window_x11" \
-            --hidden-import "kivy.core.audio" \
-            --hidden-import "kivy.core.audio.audio_sdl2" \
-            --hidden-import "kivy.core.audio.audio_gstreamer" \
-            --hidden-import "kivy.core.text" \
-            --hidden-import "kivy.core.text.text_pil" \
-            --hidden-import "kivy.core.image" \
-            --hidden-import "kivy.core.image.img_pil" \
-            --collect-submodules "kivy" \
-            --distpath ../dist/linux-${{ matrix.arch }}
-
-      # Create macOS app bundle (only for macOS builds)
       - name: Create macOS App Bundle
-        if: matrix.platform == 'macos'
         run: |
           mkdir -p "Stagebridge.app/Contents/MacOS"
           mkdir -p "Stagebridge.app/Contents/Resources"
@@ -188,9 +106,7 @@ jobs:
           mkdir -p dist/macos-${{ matrix.arch }}-app
           mv Stagebridge.app dist/macos-${{ matrix.arch }}-app/
 
-      # Verify builds
-      - name: Verify build (macOS)
-        if: matrix.platform == 'macos'
+      - name: Verify build
         run: |
           if [ -f "dist/macos-${{ matrix.arch }}-app/Stagebridge.app/Contents/MacOS/stagebridge" ]; then
             echo "✅ macOS app bundle created successfully"
@@ -200,33 +116,11 @@ jobs:
             exit 1
           fi
 
-      - name: Verify build (Linux)
-        if: matrix.platform == 'linux'
-        run: |
-          if [ -f "dist/linux-${{ matrix.arch }}/stagebridge" ]; then
-            echo "✅ Linux binary created successfully"
-            ls -la "dist/linux-${{ matrix.arch }}/stagebridge"
-            file "dist/linux-${{ matrix.arch }}/stagebridge"
-          else
-            echo "❌ Linux binary not found"
-            exit 1
-          fi
-
-      # Upload artifacts
       - name: Upload macOS App Bundle
-        if: matrix.platform == 'macos'
         uses: actions/upload-artifact@v4
         with:
           name: stagebridge-macos-${{ matrix.arch }}
           path: dist/macos-${{ matrix.arch }}-app/Stagebridge.app
-          retention-days: 30
-
-      - name: Upload Linux Binary
-        if: matrix.platform == 'linux'
-        uses: actions/upload-artifact@v4
-        with:
-          name: stagebridge-linux-${{ matrix.arch }}
-          path: dist/linux-${{ matrix.arch }}/stagebridge
           retention-days: 30
 
   # Create release if this is a tag push
@@ -244,13 +138,10 @@ jobs:
       - name: Create archives
         run: |
           cd artifacts
-
+          
           # macOS
           zip -r stagebridge-macos-x64.zip stagebridge-macos-x64/
           zip -r stagebridge-macos-arm64.zip stagebridge-macos-arm64/
-
-          # Linux
-          tar -czf stagebridge-linux-x64.tar.gz -C stagebridge-linux-x64 .
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -258,7 +149,6 @@ jobs:
           files: |
             artifacts/stagebridge-macos-x64.zip
             artifacts/stagebridge-macos-arm64.zip
-            artifacts/stagebridge-linux-x64.tar.gz
           draft: false
           prerelease: false
           generate_release_notes: true
