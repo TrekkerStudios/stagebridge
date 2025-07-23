@@ -1,0 +1,270 @@
+name: Build Multi-Platform Binaries
+
+on:
+  push:
+    branches: [ main, rebuild ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          # Windows builds
+          - os: windows-latest
+            platform: windows
+            arch: x64
+            python-version: '3.11'
+            binary-name: stagebridge.exe
+            
+          # macOS builds
+          - os: macos-latest
+            platform: macos
+            arch: x64
+            python-version: '3.11'
+            binary-name: stagebridge
+            
+          - os: macos-14  # Apple Silicon runner
+            platform: macos
+            arch: arm64
+            python-version: '3.11'
+            binary-name: stagebridge
+            
+          # Linux builds
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+            python-version: '3.11'
+            binary-name: stagebridge
+
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    # Platform-specific dependencies
+    - name: Install system dependencies (Ubuntu)
+      if: matrix.platform == 'linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libasound2-dev portaudio19-dev libportmidi-dev
+
+    - name: Install system dependencies (macOS)
+      if: matrix.platform == 'macos'
+      run: |
+        brew install portaudio portmidi
+
+    # Python dependencies
+    - name: Install Python dependencies
+      # Run this step inside the source directory
+      working-directory: ./stagebridge
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
+
+    # Build with PyInstaller using command line arguments
+    - name: Build with PyInstaller (Windows)
+      if: matrix.platform == 'windows'
+      # Run from the source directory, but output to the root
+      working-directory: ./stagebridge
+      run: |
+        pyinstaller main.py `
+          --name stagebridge `
+          --onefile `
+          --noconsole `
+          --add-data "templates;templates" `
+          --hidden-import "mido.backends.rtmidi" `
+          --hidden-import "mido.backends.portmidi" `
+          --hidden-import "mido.backends.pygame" `
+          --hidden-import "flask" `
+          --hidden-import "flask_cors" `
+          --hidden-import "pythonosc" `
+          --hidden-import "zeroconf" `
+          --hidden-import "rtmidi" `
+          --upx-dir upx `
+          --distpath ../dist/windows-${{ matrix.arch }}
+
+    - name: Build with PyInstaller (macOS)
+      if: matrix.platform == 'macos'
+      # Run from the source directory, but output to the root
+      working-directory: ./stagebridge
+      run: |
+        pyinstaller main.py \
+          --name stagebridge \
+          --onefile \
+          --windowed \
+          --add-data "templates:templates" \
+          --hidden-import "mido.backends.rtmidi" \
+          --hidden-import "mido.backends.portmidi" \
+          --hidden-import "mido.backends.pygame" \
+          --hidden-import "flask" \
+          --hidden-import "flask_cors" \
+          --hidden-import "pythonosc" \
+          --hidden-import "zeroconf" \
+          --hidden-import "rtmidi" \
+          --target-arch ${{ matrix.arch }} \
+          --distpath ../dist/macos-${{ matrix.arch }}
+
+    - name: Build with PyInstaller (Linux)
+      if: matrix.platform == 'linux'
+      # Run from the source directory, but output to the root
+      working-directory: ./stagebridge
+      run: |
+        pyinstaller main.py \
+          --name stagebridge \
+          --onefile \
+          --add-data "templates:templates" \
+          --hidden-import "mido.backends.rtmidi" \
+          --hidden-import "mido.backends.portmidi" \
+          --hidden-import "mido.backends.pygame" \
+          --hidden-import "flask" \
+          --hidden-import "flask_cors" \
+          --hidden-import "pythonosc" \
+          --hidden-import "zeroconf" \
+          --hidden-import "rtmidi" \
+          --distpath ../dist/linux-${{ matrix.arch }}
+
+    # Create macOS app bundle (only for macOS builds)
+    - name: Create macOS App Bundle
+      if: matrix.platform == 'macos'
+      run: |
+        mkdir -p "Stagebridge.app/Contents/MacOS"
+        mkdir -p "Stagebridge.app/Contents/Resources"
+        
+        # Move binary to app bundle
+        mv "dist/macos-${{ matrix.arch }}/stagebridge" "Stagebridge.app/Contents/MacOS/"
+        
+        # Create Info.plist
+        cat > "Stagebridge.app/Contents/Info.plist" << EOF
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>CFBundleExecutable</key>
+            <string>stagebridge</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.trekkerholdings.stagebridge</string>
+            <key>CFBundleName</key>
+            <string>Stagebridge</string>
+            <key>CFBundleVersion</key>
+            <string>1.0</string>
+            <key>CFBundleShortVersionString</key>
+            <string>1.0</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+        </dict>
+        </plist>
+        EOF
+        
+        # Create final distribution directory
+        mkdir -p dist/macos-${{ matrix.arch }}-app
+        mv Stagebridge.app dist/macos-${{ matrix.arch }}-app/
+
+    # Verify builds
+    - name: Verify build (Windows)
+      if: matrix.platform == 'windows'
+      run: |
+        if (Test-Path "dist/windows-${{ matrix.arch }}/stagebridge.exe") {
+          Write-Host "✅ Windows binary created successfully"
+          Get-ChildItem "dist/windows-${{ matrix.arch }}/stagebridge.exe" | Format-List
+        } else {
+          Write-Host "❌ Windows binary not found"
+          exit 1
+        }
+
+    - name: Verify build (macOS)
+      if: matrix.platform == 'macos'
+      run: |
+        if [ -f "dist/macos-${{ matrix.arch }}-app/Stagebridge.app/Contents/MacOS/stagebridge" ]; then
+          echo "✅ macOS app bundle created successfully"
+          ls -la "dist/macos-${{ matrix.arch }}-app/Stagebridge.app/Contents/MacOS/"
+        else
+          echo "❌ macOS app bundle not found"
+          exit 1
+        fi
+
+    - name: Verify build (Linux)
+      if: matrix.platform == 'linux'
+      run: |
+        if [ -f "dist/linux-${{ matrix.arch }}/stagebridge" ]; then
+          echo "✅ Linux binary created successfully"
+          ls -la "dist/linux-${{ matrix.arch }}/stagebridge"
+          file "dist/linux-${{ matrix.arch }}/stagebridge"
+        else
+          echo "❌ Linux binary not found"
+          exit 1
+        fi
+
+    # Upload artifacts
+    - name: Upload Windows Binary
+      if: matrix.platform == 'windows'
+      uses: actions/upload-artifact@v4
+      with:
+        name: stagebridge-windows-${{ matrix.arch }}
+        path: dist/windows-${{ matrix.arch }}/stagebridge.exe
+        retention-days: 30
+
+    - name: Upload macOS App Bundle
+      if: matrix.platform == 'macos'
+      uses: actions/upload-artifact@v4
+      with:
+        name: stagebridge-macos-${{ matrix.arch }}
+        path: dist/macos-${{ matrix.arch }}-app/Stagebridge.app
+        retention-days: 30
+
+    - name: Upload Linux Binary
+      if: matrix.platform == 'linux'
+      uses: actions/upload-artifact@v4
+      with:
+        name: stagebridge-linux-${{ matrix.arch }}
+        path: dist/linux-${{ matrix.arch }}/stagebridge
+        retention-days: 30
+
+  # Create release if this is a tag push
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+
+    - name: Create archives
+      run: |
+        cd artifacts
+        
+        # Windows
+        zip -r stagebridge-windows-x64.zip stagebridge-windows-x64/
+        
+        # macOS
+        zip -r stagebridge-macos-x64.zip stagebridge-macos-x64/
+        zip -r stagebridge-macos-arm64.zip stagebridge-macos-arm64/
+        
+        # Linux
+        tar -czf stagebridge-linux-x64.tar.gz -C stagebridge-linux-x64 .
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          artifacts/stagebridge-windows-x64.zip
+          artifacts/stagebridge-macos-x64.zip
+          artifacts/stagebridge-macos-arm64.zip
+          artifacts/stagebridge-linux-x64.tar.gz
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -9,3 +9,6 @@ config = {}
 midi_in_port = None
 midi_out_port = None
 rtp_midi_port = None
+
+# Dictionary to store discovered StageBridge devices
+discovered_devices = {} 
