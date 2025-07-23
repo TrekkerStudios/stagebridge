@@ -12,14 +12,15 @@ jobs:
     strategy:
       matrix:
         include:
-          # macOS builds
-          - os: macos-latest
+          # macOS Intel build
+          - os: macos-13  # Intel runner
             platform: macos
             arch: x64
             python-version: "3.11"
             binary-name: stagebridge
 
-          - os: macos-14 # Apple Silicon runner
+          # macOS Apple Silicon build
+          - os: macos-14  # Apple Silicon runner
             platform: macos
             arch: arm64
             python-version: "3.11"
@@ -111,6 +112,7 @@ jobs:
           if [ -f "dist/macos-${{ matrix.arch }}-app/Stagebridge.app/Contents/MacOS/stagebridge" ]; then
             echo "✅ macOS app bundle created successfully"
             ls -la "dist/macos-${{ matrix.arch }}-app/Stagebridge.app/Contents/MacOS/"
+            file "dist/macos-${{ matrix.arch }}-app/Stagebridge.app/Contents/MacOS/stagebridge"
           else
             echo "❌ macOS app bundle not found"
             exit 1
