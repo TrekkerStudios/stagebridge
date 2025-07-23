@@ -12,13 +12,6 @@ jobs:
     strategy:
       matrix:
         include:
-          # Windows builds - DISABLED
-          # - os: windows-latest
-          #   platform: windows
-          #   arch: x64
-          #   python-version: "3.11"
-          #   binary-name: stagebridge.exe
-
           # macOS builds
           - os: macos-latest
             platform: macos
@@ -55,16 +48,36 @@ jobs:
         if: matrix.platform == 'linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libasound2-dev portaudio19-dev libportmidi-dev
+          sudo apt-get install -y \
+            libasound2-dev \
+            portaudio19-dev \
+            libportmidi-dev \
+            libmtdev1 \
+            libgl1-mesa-glx \
+            libglib2.0-0 \
+            libxkbcommon-x11-0 \
+            libxcb-icccm4 \
+            libxcb-image0 \
+            libxcb-keysyms1 \
+            libxcb-randr0 \
+            libxcb-render-util0 \
+            libxcb-xinerama0 \
+            libxcb-xfixes0 \
+            xvfb \
+            libsdl2-dev \
+            libsdl2-image-dev \
+            libsdl2-mixer-dev \
+            libsdl2-ttf-dev \
+            libfreetype6-dev \
+            libportmidi-dev
 
       - name: Install system dependencies (macOS)
         if: matrix.platform == 'macos'
         run: |
-          brew install portaudio portmidi
+          brew install portaudio portmidi sdl2 sdl2_image sdl2_mixer sdl2_ttf
 
       # Python dependencies
       - name: Install Python dependencies
-        # Run this step inside the source directory
         working-directory: ./stagebridge
         run: |
           python -m pip install --upgrade pip
@@ -74,7 +87,6 @@ jobs:
       # Build with PyInstaller using command line arguments
       - name: Build with PyInstaller (macOS)
         if: matrix.platform == 'macos'
-        # Run from the source directory, but output to the root
         working-directory: ./stagebridge
         run: |
           pyinstaller main.py \
@@ -90,17 +102,32 @@ jobs:
             --hidden-import "pythonosc" \
             --hidden-import "zeroconf" \
             --hidden-import "rtmidi" \
+            --hidden-import "kivy" \
+            --hidden-import "kivy.core" \
+            --hidden-import "kivy.core.window" \
+            --hidden-import "kivy.core.window.window_sdl2" \
+            --hidden-import "kivy.core.audio" \
+            --hidden-import "kivy.core.audio.audio_sdl2" \
             --target-arch ${{ matrix.arch }} \
             --distpath ../dist/macos-${{ matrix.arch }}
 
       - name: Build with PyInstaller (Linux)
         if: matrix.platform == 'linux'
-        # Run from the source directory, but output to the root
         working-directory: ./stagebridge
+        env:
+          # Use virtual display for headless environment
+          DISPLAY: ":99"
+          KIVY_WINDOW: "sdl2"
+          KIVY_GL_BACKEND: "gl"
         run: |
+          # Start virtual display
+          Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+          sleep 3
+          
           pyinstaller main.py \
             --name stagebridge \
             --onefile \
+            --console \
             --add-data "templates:templates" \
             --hidden-import "mido.backends.rtmidi" \
             --hidden-import "mido.backends.portmidi" \
@@ -110,6 +137,19 @@ jobs:
             --hidden-import "pythonosc" \
             --hidden-import "zeroconf" \
             --hidden-import "rtmidi" \
+            --hidden-import "kivy" \
+            --hidden-import "kivy.core" \
+            --hidden-import "kivy.core.window" \
+            --hidden-import "kivy.core.window.window_sdl2" \
+            --hidden-import "kivy.core.window.window_x11" \
+            --hidden-import "kivy.core.audio" \
+            --hidden-import "kivy.core.audio.audio_sdl2" \
+            --hidden-import "kivy.core.audio.audio_gstreamer" \
+            --hidden-import "kivy.core.text" \
+            --hidden-import "kivy.core.text.text_pil" \
+            --hidden-import "kivy.core.image" \
+            --hidden-import "kivy.core.image.img_pil" \
+            --collect-submodules "kivy" \
             --distpath ../dist/linux-${{ matrix.arch }}
 
       # Create macOS app bundle (only for macOS builds)
