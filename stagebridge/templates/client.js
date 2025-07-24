@@ -41,23 +41,40 @@ document.addEventListener("DOMContentLoaded", () => {
   let isEditMode = false;
   let editingMappingId = null;
 
-  // Initialize page
-  loadServerIP();
-  loadMIDIPorts();
-  loadConfig();
-  loadMappings();
-  loadOscRelaySettings();
+  // Initialize page with proper error handling and debugging
+  console.log('Starting client initialization...');
+  
+  // Load configuration first, then UI elements
+  Promise.all([
+    loadServerIP(),
+    loadMIDIPorts(),
+    loadConfig(),
+    loadOscRelaySettings()
+  ]).then(() => {
+    console.log('All initial data loaded, loading mappings...');
+    loadMappings();
+  }).catch(error => {
+    console.error('Error during initialization:', error);
+    // Still try to load mappings even if other things fail
+    loadMappings();
+  });
+  
   setupEventListeners();
 
   function loadServerIP() {
-    fetch(`${API_BASE_URL}/api/system/ip`)
+    console.log('Loading server IP...');
+    return fetch(`${API_BASE_URL}/api/system/ip`)
       .then(response => response.json())
       .then(data => {
-        serverIpElement.textContent = data.ip_address;
+        console.log('Server IP response:', data);
+        if (data.ip_address) {
+          serverIpElement.textContent = data.ip_address;
+          console.log('Set server IP to:', data.ip_address);
+        }
       })
       .catch(error => {
         console.error("Error loading server IP:", error);
-        serverIpElement.textContent = "Error loading IP";
+        throw error;
       });
   }
 
@@ -82,35 +99,71 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function loadConfig() {
-    fetch(`${API_BASE_URL}/api/config?_=${Date.now()}`)
+    console.log('Loading MIDI config...');
+    return fetch(`${API_BASE_URL}/api/config?_=${Date.now()}`)
       .then(response => response.json())
       .then(config => {
+        console.log('MIDI config response:', config);
         midiInputSelect.value = config.midi_input_name || "";
         midiOutputSelect.value = config.midi_output_name || "";
+        console.log('Set MIDI values:', config.midi_input_name, config.midi_output_name);
       })
-      .catch(error => console.error("Error loading config:", error));
+      .catch(error => {
+        console.error("Error loading config:", error);
+        throw error;
+      });
   }
 
   function loadOscRelaySettings() {
-    fetch('/api/config')
+    console.log('Loading OSC relay settings...');
+    return fetch(`${API_BASE_URL}/api/config?_=${Date.now()}`)
       .then(response => response.json())
       .then(config => {
+        console.log('Loaded OSC relay config:', config);
         const relayMode = config.osc_relay_mode || 'zeroconf';
         const broadcastIp = config.osc_broadcast_ip || '0.0.0.0';
         const broadcastPort = config.osc_broadcast_port || 9000;
 
-        document.getElementById('osc-relay-mode').value = relayMode;
-        document.getElementById('broadcast-ip').value = broadcastIp;
-        document.getElementById('broadcast-port').value = broadcastPort;
+        console.log(`Setting OSC relay values: mode=${relayMode}, ip=${broadcastIp}, port=${broadcastPort}`);
+        
+        const relayModeElement = document.getElementById('osc-relay-mode');
+        const broadcastIpElement = document.getElementById('broadcast-ip');
+        const broadcastPortElement = document.getElementById('broadcast-port');
+        
+        if (relayModeElement) {
+          relayModeElement.value = relayMode;
+          console.log('Set relay mode element value to:', relayModeElement.value);
+        } else {
+          console.error('Could not find osc-relay-mode element');
+        }
+        
+        if (broadcastIpElement) {
+          broadcastIpElement.value = broadcastIp;
+          console.log('Set broadcast IP element value to:', broadcastIpElement.value);
+        } else {
+          console.error('Could not find broadcast-ip element');
+        }
+        
+        if (broadcastPortElement) {
+          broadcastPortElement.value = broadcastPort;
+          console.log('Set broadcast port element value to:', broadcastPortElement.value);
+        } else {
+          console.error('Could not find broadcast-port element');
+        }
 
         // Show/hide broadcast settings
         if (relayMode === 'broadcast') {
           broadcastSettings.classList.remove('hidden');
+          console.log('Showing broadcast settings');
         } else {
           broadcastSettings.classList.add('hidden');
+          console.log('Hiding broadcast settings');
         }
       })
-      .catch(error => console.error('Error loading OSC relay settings:', error));
+      .catch(error => {
+        console.error('Error loading OSC relay settings:', error);
+        throw error;
+      });
   }
 
   function loadMappings() {

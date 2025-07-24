@@ -91,32 +91,15 @@ def _relay_to_discovered_devices(address, *args, sender_ip=None):
         print("  -> No remote devices available to relay to (only local/sender devices found)")
 
 def _relay_to_broadcast(address, *args):
-    """Relays OSC message to broadcast address, avoiding sending to local machine."""
+    """Relays OSC message to broadcast address, avoiding sending to local machine only if same port."""
     broadcast_ip = shared_state.config.get('osc_broadcast_ip', '0.0.0.0')
     broadcast_port = shared_state.config.get('osc_broadcast_port', 9000)
+    local_osc_port = shared_state.config.get('osc_server_port', 9000)
     
-    # Don't send broadcast messages if the broadcast address includes the local machine
-    if broadcast_ip in ['0.0.0.0', '255.255.255.255']:
-        # Get all local IP addresses to check against
-        local_ips = set()
-        try:
-            # Get all local IP addresses
-            hostname = socket.gethostname()
-            local_ips.add(socket.gethostbyname(hostname))
-            
-            # Add all IPs from network interfaces
-            for interface in socket.if_nameindex():
-                try:
-                    ip = socket.ifaddresses(interface[1]).get(socket.AF_INET, [{'addr': None}])[0]['addr']
-                    if ip and ip.startswith(('192.168.', '10.', '172.')):  # Only private IPs
-                        local_ips.add(ip)
-                except (socket.error, KeyError):
-                    continue
-        except Exception as e:
-            print(f"Warning: Could not determine local IPs: {e}")
-        
-        print(f"Skipping broadcast to {broadcast_ip} as it would include local machine")
-        print(f"  Consider using the 'zeroconf' relay mode instead for better device discovery")
+    # Only prevent broadcast loops if broadcasting to the same port we're listening on
+    if broadcast_ip in ['0.0.0.0', '255.255.255.255'] and broadcast_port == local_osc_port:
+        print(f"Skipping broadcast to {broadcast_ip}:{broadcast_port} - would loop back to local server on same port")
+        print(f"  Tip: Use different broadcast port or 'zeroconf' relay mode")
         return
     
     try:

@@ -97,25 +97,70 @@ def create_app(restart_callback):
     @app.route("/api/system/ip", methods=["GET"])
     def get_system_ip():
         try:
-            # Get hostname and resolve to IP
-            hostname = socket.gethostname()
-            local_ip = socket.gethostbyname(hostname)
+            # Try multiple methods to get the actual IP address
+            local_ip = None
             
-            # If it returns loopback, try alternative method
-            if local_ip.startswith('127.'):
-                # Try to get IP from network interfaces
+            # Method 1: Try socket connection method first (most reliable)
+            try:
                 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 s.settimeout(0)
-                try:
-                    # Connect to a reserved IP that won't actually send data
-                    s.connect(('10.254.254.254', 1))
-                    local_ip = s.getsockname()[0]
-                except:
-                    local_ip = '127.0.0.1'
-                finally:
-                    s.close()
+                # Connect to a reserved IP that won't actually send data
+                s.connect(('8.8.8.8', 80))
+                local_ip = s.getsockname()[0]
+                s.close()
+                if not local_ip.startswith('127.'):
+                    return jsonify({"ip_address": local_ip})
+            except:
+                pass
             
-            return jsonify({"ip_address": local_ip})
+            # Method 2: Try hostname resolution
+            try:
+                hostname = socket.gethostname()
+                local_ip = socket.gethostbyname(hostname)
+                if not local_ip.startswith('127.'):
+                    return jsonify({"ip_address": local_ip})
+            except:
+                pass
+            
+            # Method 3: Try getting IP from network interfaces (requires netifaces if available)
+            try:
+                import netifaces
+                for interface in netifaces.interfaces():
+                    addrs = netifaces.ifaddresses(interface)
+                    if netifaces.AF_INET in addrs:
+                        for addr in addrs[netifaces.AF_INET]:
+                            ip = addr['addr']
+                            if not ip.startswith('127.') and not ip.startswith('169.254.'):
+                                return jsonify({"ip_address": ip})
+            except ImportError:
+                pass
+            except:
+                pass
+            
+            # Method 4: Try to get IP from OSC server configuration
+            try:
+                # The OSC server might be bound to a specific IP
+                osc_server_ip = shared_state.config.get('osc_server_ip', '0.0.0.0')
+                if osc_server_ip != '0.0.0.0' and not osc_server_ip.startswith('127.'):
+                    return jsonify({"ip_address": osc_server_ip})
+            except:
+                pass
+            
+            # Method 5: Try alternative socket method with different target
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                s.settimeout(0)
+                # Try connecting to local network gateway
+                s.connect(('192.168.1.1', 80))
+                local_ip = s.getsockname()[0]
+                s.close()
+                if not local_ip.startswith('127.'):
+                    return jsonify({"ip_address": local_ip})
+            except:
+                pass
+            
+            # Fallback: return 127.0.0.1
+            return jsonify({"ip_address": "127.0.0.1"})
         
         except Exception as e:
             return jsonify({
