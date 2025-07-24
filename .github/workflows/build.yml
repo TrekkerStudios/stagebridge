@@ -70,7 +70,6 @@ jobs:
             --hidden-import "kivy.core.window.window_sdl2" \
             --hidden-import "kivy.core.audio" \
             --hidden-import "kivy.core.audio.audio_sdl2" \
-            --target-arch ${{ matrix.arch }} \
             --distpath ../dist/macos-${{ matrix.arch }}
 
       - name: Create macOS App Bundle
