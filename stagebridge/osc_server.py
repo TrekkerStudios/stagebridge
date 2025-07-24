@@ -7,14 +7,38 @@ from mido import Message
 import shared_state
 
 def _relay_to_discovered_devices(address, *args):
-    """Relays OSC message to all discovered StageBridge devices."""
+    """Relays OSC message to all discovered StageBridge devices, excluding the local device."""
     if not shared_state.discovered_devices:
         print("No discovered devices to relay to")
         return
     
+    # Get local IP addresses to avoid sending messages back to self
+    local_ips = set()
+    try:
+        # Get all local IP addresses
+        hostname = socket.gethostname()
+        local_ips.add(socket.gethostbyname(hostname))
+        
+        # Add all IPs from network interfaces
+        for interface in socket.if_nameindex():
+            try:
+                ip = socket.ifaddresses(interface[1]).get(socket.AF_INET, [{'addr': None}])[0]['addr']
+                if ip:
+                    local_ips.add(ip)
+            except (socket.error, KeyError):
+                continue
+    except Exception as e:
+        print(f"Warning: Could not determine local IPs: {e}")
+    
     print(f"Relaying OSC message {address} {args} to {len(shared_state.discovered_devices)} devices")
     
+    relay_count = 0
     for device_name, device_info in shared_state.discovered_devices.items():
+        # Skip if this is the local device
+        if device_info['ip'] in local_ips:
+            print(f"  -> Skipping local device {device_info['name']} ({device_info['ip']})")
+            continue
+            
         try:
             # Create client on-demand
             client = udp_client.SimpleUDPClient(
@@ -23,13 +47,41 @@ def _relay_to_discovered_devices(address, *args):
             )
             client.send_message(address, args)
             print(f"  -> Relayed to {device_info['name']} ({device_info['ip']})")
+            relay_count += 1
         except Exception as e:
-            print(f"  -> Failed to relay to {device_info['name']}: {e}")
+            print(f"  -> Failed to relay to {device_info['name']} ({device_info['ip']}): {e}")
+    
+    if relay_count == 0 and shared_state.discovered_devices:
+        print("  -> No remote devices available to relay to (only local devices found)")
 
 def _relay_to_broadcast(address, *args):
-    """Relays OSC message to broadcast address."""
+    """Relays OSC message to broadcast address, avoiding sending to local machine."""
     broadcast_ip = shared_state.config.get('osc_broadcast_ip', '0.0.0.0')
     broadcast_port = shared_state.config.get('osc_broadcast_port', 9000)
+    
+    # Don't send broadcast messages if the broadcast address includes the local machine
+    if broadcast_ip in ['0.0.0.0', '255.255.255.255']:
+        # Get all local IP addresses to check against
+        local_ips = set()
+        try:
+            # Get all local IP addresses
+            hostname = socket.gethostname()
+            local_ips.add(socket.gethostbyname(hostname))
+            
+            # Add all IPs from network interfaces
+            for interface in socket.if_nameindex():
+                try:
+                    ip = socket.ifaddresses(interface[1]).get(socket.AF_INET, [{'addr': None}])[0]['addr']
+                    if ip and ip.startswith(('192.168.', '10.', '172.')):  # Only private IPs
+                        local_ips.add(ip)
+                except (socket.error, KeyError):
+                    continue
+        except Exception as e:
+            print(f"Warning: Could not determine local IPs: {e}")
+        
+        print(f"Skipping broadcast to {broadcast_ip} as it would include local machine")
+        print(f"  Consider using the 'zeroconf' relay mode instead for better device discovery")
+        return
     
     try:
         client = udp_client.SimpleUDPClient(broadcast_ip, broadcast_port)
@@ -37,6 +89,7 @@ def _relay_to_broadcast(address, *args):
         print(f"Relayed OSC message {address} {args} to {broadcast_ip}:{broadcast_port}")
     except Exception as e:
         print(f"Failed to relay to broadcast address {broadcast_ip}:{broadcast_port}: {e}")
+        print("  Note: Broadcast may be disabled on your network or blocked by firewall")
 
 def _send_local_osc_sequence(osc_sequence):
     """Sends a sequence of OSC messages locally."""
