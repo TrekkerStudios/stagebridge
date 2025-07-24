@@ -1,0 +1,121 @@
+name: Build Multi-Platform Binaries
+
+on:
+  push:
+    branches: [main, rebuild]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          # macOS Intel build
+          - os: macos-13  # Intel runner
+            platform: macos
+            arch: x64
+            python-version: "3.11"
+            binary-name: stagebridge
+
+          # macOS Apple Silicon build
+          - os: macos-14  # Apple Silicon runner
+            platform: macos
+            arch: arm64
+            python-version: "3.11"
+            binary-name: stagebridge
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install system dependencies (macOS)
+        run: |
+          brew install portaudio portmidi sdl2 sdl2_image sdl2_mixer sdl2_ttf
+
+      - name: Install Python dependencies
+        working-directory: ./stagebridge
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build with PyInstaller (macOS)
+        working-directory: ./stagebridge
+        run: |
+          pyinstaller main.py \
+            --name stagebridge \
+            --onefile \
+            --windowed \
+            --add-data "templates:templates" \
+            --hidden-import "mido.backends.rtmidi" \
+            --hidden-import "mido.backends.portmidi" \
+            --hidden-import "mido.backends.pygame" \
+            --hidden-import "flask" \
+            --hidden-import "flask_cors" \
+            --hidden-import "pythonosc" \
+            --hidden-import "zeroconf" \
+            --hidden-import "rtmidi" \
+            --hidden-import "kivy" \
+            --hidden-import "kivy.core" \
+            --hidden-import "kivy.core.window" \
+            --hidden-import "kivy.core.window.window_sdl2" \
+            --hidden-import "kivy.core.audio" \
+            --hidden-import "kivy.core.audio.audio_sdl2" \
+            --distpath ../dist/macos-${{ matrix.arch }}
+
+      - name: Verify build
+        run: |
+          if [ -f "dist/macos-${{ matrix.arch }}/stagebridge" ]; then
+            echo "✅ macOS binary created successfully"
+            ls -la "dist/macos-${{ matrix.arch }}/stagebridge"
+            file "dist/macos-${{ matrix.arch }}/stagebridge"
+          else
+            echo "❌ macOS binary not found"
+            exit 1
+          fi
+
+      - name: Upload macOS Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: stagebridge-macos-${{ matrix.arch }}
+          path: dist/macos-${{ matrix.arch }}/stagebridge
+          retention-days: 30
+
+  # Create release if this is a tag push
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create archives
+        run: |
+          cd artifacts
+          zip -j stagebridge-macos-x64.zip stagebridge-macos-x64/stagebridge
+          zip -j stagebridge-macos-arm64.zip stagebridge-macos-arm64/stagebridge
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/stagebridge-macos-x64.zip
+            artifacts/stagebridge-macos-arm64.zip
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
