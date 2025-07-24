@@ -1,8 +1,8 @@
-name: Build Multi-Platform Binaries
+name: Build Multi-Platform Mac Binaries
 
 on:
   push:
-    branches: [main, rebuild]
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
