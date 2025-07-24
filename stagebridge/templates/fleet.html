@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <title>StageBridge Fleet Manager</title>
-    <link rel="stylesheet" href="/fleet/style.css" />
+    <link rel="stylesheet" href="/style.css" />
   </head>
   <body>
     <div class="container">
@@ -32,10 +32,14 @@
             <label for="global-rtp-port">RTP-MIDI Target Port:</label>
             <input type="number" id="global-rtp-port" value="5004" />
           </div>
+          <div>
+            <label for="global-osc-port">OSC Server Port:</label>
+            <input type="number" id="global-osc-port" value="9000" />
+          </div>
         </div>
         <button id="sync-settings-btn">Sync Settings to All Devices</button>
       </section>
     </div>
-    <script src="/fleet/client.js"></script>
+    <script src="/fleet.js"></script>
   </body>
 </html>

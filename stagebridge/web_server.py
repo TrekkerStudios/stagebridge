@@ -18,16 +18,27 @@ import shared_state
 import config_manager
 from song_parser import parse_song_csv
 
-STATIC_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 TEMPLATE_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
 
 def create_app(restart_callback):
-    app = Flask(__name__, static_folder=STATIC_FOLDER, template_folder=TEMPLATE_FOLDER)
+    app = Flask(__name__, static_folder=TEMPLATE_FOLDER, template_folder=TEMPLATE_FOLDER)
     CORS(app)
 
     @app.route("/")
     def serve_index():
-        return send_from_directory(app.static_folder, "index.html")
+        return "<h1>StageBridge Admin Server</h1><p><a href='/admin'>Go to Admin Panel</a></p>"
+
+    @app.route("/style.css")
+    def serve_css():
+        return send_from_directory(app.static_folder, "style.css")
+
+    @app.route("/client.js")
+    def serve_client_js():
+        return send_from_directory(app.static_folder, "client.js")
+
+    @app.route("/fleet.js")
+    def serve_fleet_js():
+        return send_from_directory(app.static_folder, "fleet.js")
 
     @app.route("/admin", methods=["GET", "POST"])
     def admin_page():
@@ -44,7 +55,7 @@ def create_app(restart_callback):
             config_manager.save_config()
             restart_callback()
             return "<h1>Configuration saved. Restarting service...</h1>"
-        return render_template("admin/index.html", config=shared_state.config)
+        return render_template("admin.html", config=shared_state.config)
 
     @app.route("/api/system/restart", methods=["POST"])
     def system_restart():

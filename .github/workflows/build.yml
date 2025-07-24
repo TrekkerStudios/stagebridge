@@ -1,10 +1,10 @@
-name: Build Multi-Platform Mac Binaries
+name: Build Multi-Platform Binaries
 
 on:
   push:
-    branches: [main]
+    branches: [main, refactor]
   pull_request:
-    branches: [main]
+    branches: [main, refactor]
   workflow_dispatch:
 
 jobs:
@@ -13,18 +13,28 @@ jobs:
       matrix:
         include:
           # macOS Intel build
-          - os: macos-13  # Intel runner
+          - os: macos-13
             platform: macos
             arch: x64
             python-version: "3.11"
             binary-name: stagebridge
+            system-deps: "brew install portaudio portmidi sdl2 sdl2_image sdl2_mixer sdl2_ttf"
 
           # macOS Apple Silicon build
-          - os: macos-14  # Apple Silicon runner
+          - os: macos-14
             platform: macos
             arch: arm64
             python-version: "3.11"
             binary-name: stagebridge
+            system-deps: "brew install portaudio portmidi sdl2 sdl2_image sdl2_mixer sdl2_ttf"
+
+          # Linux x64 build
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+            python-version: "3.11"
+            binary-name: stagebridge
+            system-deps: "sudo apt-get update && sudo apt-get install -y portaudio19-dev libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libasound2-dev"
 
     runs-on: ${{ matrix.os }}
 
@@ -37,9 +47,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install system dependencies (macOS)
-        run: |
-          brew install portaudio portmidi sdl2 sdl2_image sdl2_mixer sdl2_ttf
+      - name: Install system dependencies
+        run: ${{ matrix.system-deps }}
 
       - name: Install Python dependencies
         working-directory: ./stagebridge
@@ -49,6 +58,7 @@ jobs:
           pip install pyinstaller
 
       - name: Build with PyInstaller (macOS)
+        if: matrix.platform == 'macos'
         working-directory: ./stagebridge
         run: |
           pyinstaller main.py \
@@ -57,37 +67,48 @@ jobs:
             --windowed \
             --add-data "templates:templates" \
             --hidden-import "mido.backends.rtmidi" \
-            --hidden-import "mido.backends.portmidi" \
-            --hidden-import "mido.backends.pygame" \
-            --hidden-import "flask" \
             --hidden-import "flask_cors" \
-            --hidden-import "pythonosc" \
-            --hidden-import "zeroconf" \
-            --hidden-import "rtmidi" \
-            --hidden-import "kivy" \
-            --hidden-import "kivy.core" \
-            --hidden-import "kivy.core.window" \
+            --hidden-import "pythonosc.dispatcher" \
+            --hidden-import "pythonosc.osc_server" \
+            --hidden-import "pythonosc.udp_client" \
+            --hidden-import "zeroconf._utils.ipaddress" \
             --hidden-import "kivy.core.window.window_sdl2" \
-            --hidden-import "kivy.core.audio" \
-            --hidden-import "kivy.core.audio.audio_sdl2" \
-            --distpath ../dist/macos-${{ matrix.arch }}
+            --distpath ../dist/${{ matrix.platform }}-${{ matrix.arch }}
+
+      - name: Build with PyInstaller (Linux)
+        if: matrix.platform == 'linux'
+        working-directory: ./stagebridge
+        run: |
+          pyinstaller main.py \
+            --name stagebridge \
+            --onefile \
+            --add-data "templates:templates" \
+            --hidden-import "mido.backends.rtmidi" \
+            --hidden-import "flask_cors" \
+            --hidden-import "pythonosc.dispatcher" \
+            --hidden-import "pythonosc.osc_server" \
+            --hidden-import "pythonosc.udp_client" \
+            --hidden-import "zeroconf._utils.ipaddress" \
+            --hidden-import "kivy.core.window.window_x11" \
+            --distpath ../dist/${{ matrix.platform }}-${{ matrix.arch }}
 
       - name: Verify build
         run: |
-          if [ -f "dist/macos-${{ matrix.arch }}/stagebridge" ]; then
-            echo "✅ macOS binary created successfully"
-            ls -la "dist/macos-${{ matrix.arch }}/stagebridge"
-            file "dist/macos-${{ matrix.arch }}/stagebridge"
+          BINARY_PATH="dist/${{ matrix.platform }}-${{ matrix.arch }}/stagebridge"
+          if [ -f "$BINARY_PATH" ]; then
+            echo "✅ ${{ matrix.platform }}-${{ matrix.arch }} binary created successfully"
+            ls -la "$BINARY_PATH"
+            file "$BINARY_PATH"
           else
-            echo "❌ macOS binary not found"
+            echo "❌ ${{ matrix.platform }}-${{ matrix.arch }} binary not found"
             exit 1
           fi
 
-      - name: Upload macOS Binary
+      - name: Upload Binary
         uses: actions/upload-artifact@v4
         with:
-          name: stagebridge-macos-${{ matrix.arch }}
-          path: dist/macos-${{ matrix.arch }}/stagebridge
+          name: stagebridge-${{ matrix.platform }}-${{ matrix.arch }}
+          path: dist/${{ matrix.platform }}-${{ matrix.arch }}/stagebridge
           retention-days: 30
 
   # Create release if this is a tag push
@@ -105,8 +126,10 @@ jobs:
       - name: Create archives
         run: |
           cd artifacts
+          # Create platform-specific archives
           zip -j stagebridge-macos-x64.zip stagebridge-macos-x64/stagebridge
           zip -j stagebridge-macos-arm64.zip stagebridge-macos-arm64/stagebridge
+          tar -czf stagebridge-linux-x64.tar.gz -C stagebridge-linux-x64 stagebridge
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -114,6 +137,7 @@ jobs:
           files: |
             artifacts/stagebridge-macos-x64.zip
             artifacts/stagebridge-macos-arm64.zip
+            artifacts/stagebridge-linux-x64.tar.gz
           draft: false
           prerelease: false
           generate_release_notes: true

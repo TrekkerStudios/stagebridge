@@ -11,20 +11,14 @@ from zeroconf import Zeroconf, ServiceBrowser, ServiceInfo
 import shared_state
 
 def create_client_app():
-    """Creates and configures the Flask application for the client frontend."""
-
-    # Define paths relative to this file
     CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-    PUBLIC_FOLDER = os.path.join(CURRENT_DIR, "templates", "public")
-    CLIENT_TEMPLATES_FOLDER = os.path.join(CURRENT_DIR, "templates", "client")
-    FLEET_TEMPLATES_FOLDER = os.path.join(CURRENT_DIR, "templates", "fleet")
+    TEMPLATES_FOLDER = os.path.join(CURRENT_DIR, "templates")
 
-    # Initialize Flask app
     app = Flask(
         __name__,
-        static_folder=PUBLIC_FOLDER,
+        static_folder=TEMPLATES_FOLDER,
         static_url_path="/",
-        template_folder=CLIENT_TEMPLATES_FOLDER,
+        template_folder=TEMPLATES_FOLDER,
     )
     
     # Apply CORS middleware
@@ -33,18 +27,11 @@ def create_client_app():
     # --- Main Client Routes ---
     @app.route("/")
     def serve_client_index():
-        return render_template("index.html")
+        return render_template("client.html")
 
-    # --- Fleet Manager Routes ---
     @app.route("/fleet")
     def serve_fleet_index():
-        """Serves the fleet manager interface."""
-        return send_from_directory(FLEET_TEMPLATES_FOLDER, 'index.html')
-
-    @app.route("/fleet/<path:filename>")
-    def serve_fleet_static(filename):
-        """Serves static files for the fleet manager."""
-        return send_from_directory(FLEET_TEMPLATES_FOLDER, filename)
+        return render_template("fleet.html")
 
     @app.route("/api/fleet/devices", methods=["GET"])
     def get_fleet_devices():
@@ -69,13 +56,14 @@ def create_client_app():
 
     @app.route("/api/fleet/sync", methods=["POST"])
     def sync_fleet_devices():
-        """Receives RTP MIDI target IP and Port, then updates all discovered devices."""
+        """Receives RTP MIDI target IP/Port and OSC port, then updates all discovered devices."""
         data = request.get_json()
         rtp_ip = data.get("rtp_ip")
         rtp_port = data.get("rtp_port")
+        osc_port = data.get("osc_port")
 
-        if not rtp_ip or not rtp_port:
-            return jsonify({"error": "Missing rtp_ip or rtp_port"}), 400
+        if not rtp_ip or not rtp_port or not osc_port:
+            return jsonify({"error": "Missing rtp_ip, rtp_port, or osc_port"}), 400
 
         devices_to_sync = list(shared_state.discovered_devices.values())
         
@@ -94,6 +82,7 @@ def create_client_app():
                 # 2. Update config values
                 current_config["rtp_midi_target_ip"] = rtp_ip
                 current_config["rtp_midi_target_port"] = rtp_port
+                current_config["osc_server_port"] = osc_port
 
                 # 3. Save updated config
                 put_res = requests.put(
@@ -135,8 +124,8 @@ def create_client_app():
     def not_found(e):
         # Check if it's a fleet route
         if request.path.startswith('/fleet'):
-            return send_from_directory(FLEET_TEMPLATES_FOLDER, 'index.html'), 200
+            return render_template('fleet.html'), 200
         # Otherwise serve the main client app
-        return render_template("index.html"), 200
+        return render_template("client.html"), 200
 
     return app

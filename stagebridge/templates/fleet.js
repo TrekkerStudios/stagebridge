@@ -46,9 +46,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const syncSettings = async () => {
     const rtp_ip = document.getElementById("global-rtp-ip").value;
     const rtp_port = parseInt(document.getElementById("global-rtp-port").value);
+    const osc_port = parseInt(document.getElementById("global-osc-port").value);
 
-    if (!rtp_ip || !rtp_port) {
-      alert("Please fill in both RTP IP and Port fields.");
+    if (!rtp_ip || !rtp_port || !osc_port) {
+      alert("Please fill in all network settings fields.");
       return;
     }
     if (
@@ -63,10 +64,10 @@ document.addEventListener("DOMContentLoaded", () => {
     syncBtn.disabled = true;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/sync`, {
+      const response = await fetch(`${API_BASE_URL}/api/fleet/sync`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rtp_ip, rtp_port }),
+        body: JSON.stringify({ rtp_ip, rtp_port, osc_port }),
       });
       const results = await response.json();
       console.log("Sync results:", results);
