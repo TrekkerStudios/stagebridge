@@ -18,6 +18,9 @@ def load_config():
             "rtp_midi_target_port": 5004,
             "midi_input_name": None,
             "midi_output_name": None,
+            "osc_relay_mode": "zeroconf",  # NEW
+            "osc_broadcast_ip": "0.0.0.0",  # NEW
+            "osc_broadcast_port": 9000,     # NEW
             "song_parser_settings": {
                 "column_name": "QUAD PATCH",
                 "scene_prefix": "SC ",
@@ -28,16 +31,10 @@ def load_config():
         }
         save_config()
     
-    # Ensure parser settings exist for older configs
-    if "song_parser_settings" not in shared_state.config:
-        shared_state.config["song_parser_settings"] = {
-            "column_name": "QUAD PATCH",
-            "scene_prefix": "SC ",
-            "footswitch_prefix": "FS ",
-            "osc_prefix": "/patch",
-        }
-
-def save_config():
-    """Saves the current configuration to the JSON file."""
-    with open(CONFIG_FILE, "w") as f:
-        json.dump(shared_state.config, f, indent=2)
+    # Ensure new settings exist for older configs
+    if "osc_relay_mode" not in shared_state.config:
+        shared_state.config["osc_relay_mode"] = "zeroconf"
+    if "osc_broadcast_ip" not in shared_state.config:
+        shared_state.config["osc_broadcast_ip"] = "0.0.0.0"
+    if "osc_broadcast_port" not in shared_state.config:
+        shared_state.config["osc_broadcast_port"] = 9000

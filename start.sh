@@ -1,7 +1,7 @@
 #!/bin/bash
 
 cd ~/VSCode/stagebridge/bin
-./sb-beta &
+./stagebridge &
 #./stagebridge &
 PYTHON_PID=$!
 

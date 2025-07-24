@@ -49,14 +49,27 @@ def create_client_app():
     @app.route("/api/fleet/devices", methods=["GET"])
     def get_fleet_devices():
         """Returns a list of currently discovered StageBridge devices."""
-        devices = list(shared_state.discovered_devices.values())
+        print(f"DEBUG: discovered_devices = {shared_state.discovered_devices}")
+        
+        # Filter out non-JSON-serializable fields (like the OSC client)
+        devices = []
+        for device_info in shared_state.discovered_devices.values():
+            # Create a copy without the 'client' field
+            json_safe_device = {
+                'name': device_info['name'],
+                'host': device_info['host'],
+                'ip': device_info['ip'],
+                'port': device_info['port'],
+                'fqdn': device_info['fqdn']
+            }
+            devices.append(json_safe_device)
+        
+        print(f"DEBUG: Returning {len(devices)} devices")
         return jsonify(devices)
 
     @app.route("/api/fleet/sync", methods=["POST"])
     def sync_fleet_devices():
-        """
-        Receives RTP MIDI target IP and Port, then updates all discovered devices.
-        """
+        """Receives RTP MIDI target IP and Port, then updates all discovered devices."""
         data = request.get_json()
         rtp_ip = data.get("rtp_ip")
         rtp_port = data.get("rtp_port")

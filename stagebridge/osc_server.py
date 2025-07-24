@@ -2,6 +2,7 @@ import threading
 import time
 from pythonosc.dispatcher import Dispatcher
 from pythonosc.osc_server import ThreadingOSCUDPServer
+from pythonosc import udp_client
 from mido import Message
 import shared_state
 
@@ -15,10 +16,27 @@ def _relay_to_discovered_devices(address, *args):
     
     for device_name, device_info in shared_state.discovered_devices.items():
         try:
-            device_info['client'].send_message(address, args)
+            # Create client on-demand
+            client = udp_client.SimpleUDPClient(
+                device_info['ip'], 
+                shared_state.config.get('osc_server_port', 9000)
+            )
+            client.send_message(address, args)
             print(f"  -> Relayed to {device_info['name']} ({device_info['ip']})")
         except Exception as e:
             print(f"  -> Failed to relay to {device_info['name']}: {e}")
+
+def _relay_to_broadcast(address, *args):
+    """Relays OSC message to broadcast address."""
+    broadcast_ip = shared_state.config.get('osc_broadcast_ip', '0.0.0.0')
+    broadcast_port = shared_state.config.get('osc_broadcast_port', 9000)
+    
+    try:
+        client = udp_client.SimpleUDPClient(broadcast_ip, broadcast_port)
+        client.send_message(address, args)
+        print(f"Relayed OSC message {address} {args} to {broadcast_ip}:{broadcast_port}")
+    except Exception as e:
+        print(f"Failed to relay to broadcast address {broadcast_ip}:{broadcast_port}: {e}")
 
 def _osc_handler(address, *args):
     """Handles incoming OSC messages and translates them to physical MIDI."""
@@ -57,10 +75,16 @@ def _osc_handler(address, *args):
                 except Exception as e:
                     print(f"Error processing step in sequence for {address}: {e}")
     
-    # If no mapping found, relay to discovered devices
+    # If no mapping found, relay based on mode
     if not mapping_found:
-        print(f"No mapping found for {address}, relaying to discovered devices")
-        _relay_to_discovered_devices(address, *args)
+        relay_mode = shared_state.config.get('osc_relay_mode', 'zeroconf')
+        
+        if relay_mode == 'broadcast':
+            print(f"No mapping found for {address}, relaying to broadcast address")
+            _relay_to_broadcast(address, *args)
+        else:  # zeroconf mode
+            print(f"No mapping found for {address}, relaying to discovered devices")
+            _relay_to_discovered_devices(address, *args)
 
 def start_osc_server():
     """Starts the OSC server in a background thread."""

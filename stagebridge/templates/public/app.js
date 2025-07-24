@@ -748,6 +748,75 @@ document.addEventListener("DOMContentLoaded", () => {
     return { osc_address, description, midi_sequence };
   }
 
+  const oscRelayMode = document.getElementById('osc-relay-mode');
+  const broadcastSettings = document.getElementById('broadcast-settings');
+
+  // Show/hide broadcast settings based on selection
+  oscRelayMode.addEventListener('change', function () {
+    if (this.value === 'broadcast') {
+      broadcastSettings.classList.remove('hidden');
+    } else {
+      broadcastSettings.classList.add('hidden');
+    }
+  });
+
+  // Load current OSC relay settings
+  function loadOscRelaySettings() {
+    fetch('/api/config')
+      .then(response => response.json())
+      .then(config => {
+        const relayMode = config.osc_relay_mode || 'zeroconf';
+        const broadcastIp = config.osc_broadcast_ip || '0.0.0.0';
+        const broadcastPort = config.osc_broadcast_port || 9000;
+
+        document.getElementById('osc-relay-mode').value = relayMode;
+        document.getElementById('broadcast-ip').value = broadcastIp;
+        document.getElementById('broadcast-port').value = broadcastPort;
+
+        // Show/hide broadcast settings
+        if (relayMode === 'broadcast') {
+          broadcastSettings.classList.remove('hidden');
+        } else {
+          broadcastSettings.classList.add('hidden');
+        }
+      })
+      .catch(error => console.error('Error loading OSC relay settings:', error));
+  }
+
+  // Save OSC relay settings (modify your existing save function)
+  const originalSaveFunction = document.getElementById('save-and-restart-btn').onclick;
+  document.getElementById('save-and-restart-btn').addEventListener('click', function () {
+    // Get OSC relay settings
+    const oscRelayMode = document.getElementById('osc-relay-mode').value;
+    const broadcastIp = document.getElementById('broadcast-ip').value;
+    const broadcastPort = parseInt(document.getElementById('broadcast-port').value);
+
+    // Get existing config first
+    fetch('/api/config')
+      .then(response => response.json())
+      .then(config => {
+        // Update OSC relay settings
+        config.osc_relay_mode = oscRelayMode;
+        config.osc_broadcast_ip = broadcastIp;
+        config.osc_broadcast_port = broadcastPort;
+
+        // Save updated config
+        return fetch('/api/config', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(config)
+        });
+      })
+      .then(() => {
+        // Call original save function for MIDI settings
+        if (originalSaveFunction) originalSaveFunction();
+      })
+      .catch(error => console.error('Error saving OSC relay settings:', error));
+  });
+
+  // Load settings on page load
+  loadOscRelaySettings();
+
   // --- START ---
   loadInitialData();
 });

@@ -1,12 +1,22 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const API_BASE_URL = window.location.origin; // Served from same origin
+  // --- CONFIGURATION ---
+  const CURRENT_ADDR = window.location.origin;
+  const API_PORT = "3000";
+  const BASE_ADDR =
+    CURRENT_ADDR.lastIndexOf(":") !== -1
+      ? CURRENT_ADDR.slice(0, CURRENT_ADDR.lastIndexOf(":"))
+      : CURRENT_ADDR;
+  const API_BASE_URL = BASE_ADDR + ":" + API_PORT;
+  console.log(`Current URL: ${CURRENT_ADDR} | API URL (derived): ${API_BASE_URL}`);
+
+
   const deviceList = document.getElementById("device-list");
   const refreshBtn = document.getElementById("refresh-devices-btn");
   const syncBtn = document.getElementById("sync-settings-btn");
 
   const fetchDevices = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/devices`);
+      const response = await fetch(`${API_BASE_URL}/api/fleet/devices`);
       if (!response.ok) throw new Error("Proxy not responding");
       const discoveredDevices = await response.json();
       renderDevices(discoveredDevices);

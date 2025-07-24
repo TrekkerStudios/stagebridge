@@ -23,9 +23,6 @@ class StageBridgeListener(ServiceListener):
     def add_service(self, zeroconf, type_, name):
         info = zeroconf.get_service_info(type_, name, timeout=3000)
         if info:
-            # Don't add ourselves
-            our_ip = get_ip_address()
-            
             ip_address = None
             if info.addresses:
                 for addr_bytes in info.addresses:
@@ -35,7 +32,7 @@ class StageBridgeListener(ServiceListener):
                     except OSError:
                         continue
             
-            if ip_address and ip_address != our_ip and info.port:
+            if ip_address and info.port:
                 # Store in format expected by both OSC relay and fleet manager
                 device_info = {
                     'name': info.properties.get(b'name', b'Unknown').decode('utf-8') if info.properties.get(b'name') else info.name,
@@ -66,6 +63,7 @@ def start_discovery_service(port, device_name="StageBridge"):
     
     def run_zeroconf():
         ip_address = get_ip_address()
+        print(f"DEBUG: Our IP address is: {ip_address}")
         
         # Service announcement
         instance_name = f"{device_name}._stagebridge-api._tcp.local."
@@ -88,6 +86,18 @@ def start_discovery_service(port, device_name="StageBridge"):
         listener = StageBridgeListener()
         browser = ServiceBrowser(zeroconf, service_type, listener)
         print("Zeroconf: Started browsing for other StageBridge devices")
+        
+        # Add periodic debug info
+        # def debug_loop():
+        #     while True:
+        #         time.sleep(30)  # Every 30 seconds
+        #         print(f"DEBUG: Currently discovered {len(shared_state.discovered_devices)} devices")
+        #         for name, device in shared_state.discovered_devices.items():
+        #             print(f"  - {device['name']} at {device['ip']}:{device['port']}")
+        
+        # Start debug loop in background
+        # debug_thread = threading.Thread(target=debug_loop, daemon=True)
+        # debug_thread.start()
         
         try:
             while True:

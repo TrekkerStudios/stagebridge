@@ -42,6 +42,20 @@
                         <label for="midi-output">MIDI Output:</label>
                         <select id="midi-output"></select>
                     </div>
+                    <div class="form-grid" style="margin-top: 20px;">
+                        <label for="osc-relay-mode">Unmatched OSC Relay:</label>
+                        <select id="osc-relay-mode">
+                            <option value="zeroconf">Relay to Discovered Devices</option>
+                            <option value="broadcast">Relay to Broadcast Address</option>
+                        </select>
+
+                        <div id="broadcast-settings" class="hidden">
+                            <label for="broadcast-ip">Broadcast IP:</label>
+                            <input type="text" id="broadcast-ip" value="0.0.0.0" placeholder="0.0.0.0" />
+                            <label for="broadcast-port">Broadcast Port:</label>
+                            <input type="number" id="broadcast-port" value="9000" placeholder="9000" />
+                        </div>
+                    </div>
                     <button id="save-and-restart-btn">
                         Save & Restart Service
                     </button>
@@ -54,6 +68,12 @@
                             <a href="http://localhost:3001/admin" target="_blank" id="admin-redirect"
                                 style="color: red">
                                 Open Network Admin Page
+                            </a>
+                            <br />
+                            <!-- NEW: Fleet Manager Button -->
+                            <a href="/fleet" target="_blank"
+                                style="color: blue; margin-top: 10px; display: inline-block;">
+                                Open Fleet Manager
                             </a>
                         </p>
                     </div>
