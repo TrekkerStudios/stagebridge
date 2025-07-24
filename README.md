@@ -2,10 +2,6 @@
 
 needed this for my band's live show control, most of it is vibe-coded, pr's welcome 🤙
 
-## Versions
-* ./bin has the old stable version but it's missing some functions
-* gh actions build has latest features but is not guaranteed to be stable
-
 ## Components
 
 ### stagebridge (python)
