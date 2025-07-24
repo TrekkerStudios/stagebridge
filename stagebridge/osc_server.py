@@ -38,8 +38,28 @@ def _relay_to_broadcast(address, *args):
     except Exception as e:
         print(f"Failed to relay to broadcast address {broadcast_ip}:{broadcast_port}: {e}")
 
+def _send_local_osc_sequence(osc_sequence):
+    """Sends a sequence of OSC messages locally."""
+    local_port = shared_state.config.get('osc_server_port', 9000)
+    
+    try:
+        # Create a client to send to ourselves (localhost)
+        local_client = udp_client.SimpleUDPClient('127.0.0.1', local_port)
+        
+        for osc_command in osc_sequence:
+            address = osc_command.get('address')
+            args = osc_command.get('args', [])
+            
+            if address:
+                print(f"  -> Sending local OSC: {address} {args}")
+                local_client.send_message(address, args)
+                time.sleep(0.01)  # Small delay between commands
+                
+    except Exception as e:
+        print(f"Error sending local OSC sequence: {e}")
+
 def _osc_handler(address, *args):
-    """Handles incoming OSC messages and translates them to physical MIDI."""
+    """Handles incoming OSC messages and translates them to MIDI or OSC."""
     print(f"OSC Received: {address} {args}")
     
     # Check for predefined mappings first
@@ -47,33 +67,43 @@ def _osc_handler(address, *args):
     for mapping in shared_state.config.get("osc_mappings", []):
         if mapping["osc_address"] == address:
             mapping_found = True
+            mapping_type = mapping.get("mapping_type", "midi")
             
-            if not shared_state.midi_out_port:
-                print("Warning: MIDI output port not configured or open.")
-                continue
-            
-            midi_sequence = mapping.get("midi_sequence", [])
-            if not midi_sequence: 
-                continue
-            
-            print(f"Found mapping for {address}. Sending sequence...")
-            for midi_info in midi_sequence:
-                try:
-                    msg_type = midi_info["type"]
-                    channel = int(midi_info["channel"])
+            if mapping_type == "osc":
+                # Handle OSC-to-OSC mapping
+                osc_sequence = mapping.get("osc_sequence", [])
+                if osc_sequence:
+                    print(f"Found OSC mapping for {address}. Sending OSC sequence...")
+                    _send_local_osc_sequence(osc_sequence)
                     
-                    if msg_type == "program_change":
-                        msg = Message("program_change", channel=channel, program=int(midi_info["program"]))
-                    elif msg_type == "control_change":
-                        msg = Message("control_change", channel=channel, control=int(midi_info["control"]), value=int(midi_info["value"]))
-                    else: 
-                        continue
-                    
-                    print(f"  -> Sending MIDI: {msg}")
-                    shared_state.midi_out_port.send(msg)
-                    time.sleep(0.01)
-                except Exception as e:
-                    print(f"Error processing step in sequence for {address}: {e}")
+            else:
+                # Handle OSC-to-MIDI mapping (existing code)
+                if not shared_state.midi_out_port:
+                    print("Warning: MIDI output port not configured or open.")
+                    continue
+                
+                midi_sequence = mapping.get("midi_sequence", [])
+                if not midi_sequence: 
+                    continue
+                
+                print(f"Found MIDI mapping for {address}. Sending MIDI sequence...")
+                for midi_info in midi_sequence:
+                    try:
+                        msg_type = midi_info["type"]
+                        channel = int(midi_info["channel"])
+                        
+                        if msg_type == "program_change":
+                            msg = Message("program_change", channel=channel, program=int(midi_info["program"]))
+                        elif msg_type == "control_change":
+                            msg = Message("control_change", channel=channel, control=int(midi_info["control"]), value=int(midi_info["value"]))
+                        else: 
+                            continue
+                        
+                        print(f"  -> Sending MIDI: {msg}")
+                        shared_state.midi_out_port.send(msg)
+                        time.sleep(0.01)
+                    except Exception as e:
+                        print(f"Error processing step in MIDI sequence for {address}: {e}")
     
     # If no mapping found, relay based on mode
     if not mapping_found:

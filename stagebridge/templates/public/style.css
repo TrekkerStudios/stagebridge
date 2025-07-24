@@ -253,3 +253,62 @@ button.danger:hover {
   color: #dc3545;
   background: #f8d7da;
 }
+
+.mapping-type-badge {
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+.mapping-type-badge.midi {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+.mapping-type-badge.osc {
+    background-color: #f3e5f5;
+    color: #7b1fa2;
+}
+
+.osc-command-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+.osc-command-address,
+.osc-command-args {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.remove-osc-command {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.remove-osc-command:hover {
+    background-color: #d32f2f;
+}
+
+#add-osc-command-btn {
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+#add-osc-command-btn:hover {
+    background-color: #45a049;
+}
