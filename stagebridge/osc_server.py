@@ -14,6 +14,7 @@ MESSAGE_TTL = 0.5  # seconds to remember a message
 
 def _is_message_recent(message_id):
     """Check if we've seen this message recently to prevent loops."""
+    global recent_messages
     current_time = time.time()
     # Clean up old entries
     recent_messages = {k: v for k, v in recent_messages.items() if current_time - v < MESSAGE_TTL}
