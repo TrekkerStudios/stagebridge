@@ -38,3 +38,8 @@ def load_config():
         shared_state.config["osc_broadcast_ip"] = "0.0.0.0"
     if "osc_broadcast_port" not in shared_state.config:
         shared_state.config["osc_broadcast_port"] = 9000
+
+def save_config():
+    """Saves the current config to the JSON file."""
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(shared_state.config, f, indent=2)
