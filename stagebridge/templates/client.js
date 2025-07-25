@@ -438,15 +438,23 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Submit the mapping
-    const url = isEditMode ? `/api/mappings/${editingMappingId}` : '/api/mappings';
+    const url = isEditMode ? `${API_BASE_URL}/api/mappings/${editingMappingId}` : `${API_BASE_URL}/api/mappings`;
     const method = isEditMode ? 'PUT' : 'POST';
+
+    console.log(`Submitting mapping: ${method} ${url}`, mappingData);
 
     fetch(url, {
       method: method,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(mappingData)
     })
-      .then(response => response.json())
+      .then(response => {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+      })
       .then(data => {
         console.log('Mapping saved:', data);
         loadMappings(); // Refresh the table
@@ -454,7 +462,7 @@ document.addEventListener("DOMContentLoaded", () => {
       })
       .catch(error => {
         console.error('Error saving mapping:', error);
-        alert('Error saving mapping. Please try again.');
+        alert(`Error saving mapping: ${error.message}. Please try again.`);
       });
   }
 
